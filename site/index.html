@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CalmList</title>
+  <meta name="description" content="A calm, keyboard-first task manager inspired by Todoist. Local-first, open source, self-hostable sync." />
+  <meta name="theme-color" content="#000000" />
+  <meta property="og:title" content="CalmList" />
+  <meta property="og:description" content="Plan less. Finish more. A calm, keyboard-first task manager." />
+  <meta property="og:image" content="assets/today.png" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" id="header">
+    <div class="header-shell">
+      <a class="brand" href="./">CalmList</a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#self-host">Self-host</a>
+        <a href="https://github.com/corund207/CalmList" rel="noopener">GitHub <svg class="is-up-right" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+        <a class="is-cta" href="app/">Open App</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="heading reveal">
+        <p class="eyebrow">CalmList</p>
+        <h1 class="display-lg">Plan less.<br />Finish more.</h1>
+        <p class="intro">A keyboard-first task manager that reads what you type, keeps everything on your device, and syncs through a server you own.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="app/">Open the App</a>
+          <a class="btn btn-secondary" href="https://github.com/corund207/CalmList" rel="noopener">View the Code <svg class="is-up-right" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+        </div>
+      </div>
+      <figure class="media hero-media scrub">
+        <img src="assets/today.png" width="2880" height="1800" alt="CalmList's Today view: three tasks due today, with the sidebar showing Inbox, Today, Upcoming and two projects." />
+      </figure>
+    </section>
+
+    <section class="showcase" id="features">
+      <div class="showcase-copy reveal">
+        <p class="showcase-eyebrow">Quick Add</p>
+        <h2>Type it.<br />It understands.</h2>
+        <p class="showcase-body">“Call Sam tomorrow at 4pm p1 #Launch @phone” becomes a task with a date, a time, a priority, a project and a label. Every token lights up as you type.</p>
+      </div>
+      <figure class="media showcase-media scrub">
+        <img src="assets/quick-add.png" width="2880" height="1800" loading="lazy" alt="The quick add dialog with the date, priority, project and label in the typed text highlighted, and matching chips below." />
+      </figure>
+    </section>
+
+    <section class="chapter">
+      <div class="heading reveal">
+        <p class="eyebrow">Everything a list needs</p>
+        <h2 class="display-md">Built for the<br />way work moves.</h2>
+      </div>
+      <div class="specs reveal">
+        <div><h3>Today &amp; Upcoming</h3><p>Overdue work up top, a week strip to jump ahead, and one tap to reschedule it all.</p></div>
+        <div><h3>Repeating tasks</h3><p>“every weekday”, “every other week”, “every! 3 days”. Completing one rolls it forward.</p></div>
+        <div><h3>Boards and sections</h3><p>Switch any project between a list and a board. Drag tasks across sections.</p></div>
+        <div><h3>Filters</h3><p>Saved queries like <code>(today | overdue) &amp; #Work &amp; !@waiting</code>, validated as you type.</p></div>
+        <div><h3>Sub-tasks and notes</h3><p>Break work down, add descriptions, deadlines and comments in the task view.</p></div>
+        <div><h3>Command palette</h3><p>Press / to find any task, project or label, or run a filter on the spot.</p></div>
+        <div><h3>Undo everything</h3><p>Complete, delete or reschedule and change your mind from the toast.</p></div>
+        <div><h3>Daily goal</h3><p>A streak, a 14-day chart and an activity log of what you finished.</p></div>
+      </div>
+    </section>
+
+    <section class="showcase is-deep">
+      <div class="showcase-copy reveal">
+        <p class="showcase-eyebrow">Boards</p>
+        <h2>One project.<br />Two ways to see it.</h2>
+        <p class="showcase-body">Sections become columns. Drag a card to move it, open it to see everything behind it.</p>
+      </div>
+      <figure class="media showcase-media scrub">
+        <img src="assets/board.png" width="2880" height="1800" loading="lazy" alt="A project shown as a board with Basics and Power moves columns of task cards." />
+      </figure>
+    </section>
+
+    <section class="split">
+      <div class="split-copy reveal">
+        <p class="eyebrow">Local-first</p>
+        <h2 class="display-sm">Yours,<br />even offline.</h2>
+        <p class="lede">Tasks live in your browser from the first keystroke. Sign in to a CalmList server and every device stays in step, with edits made offline sent the moment you reconnect.</p>
+        <dl class="meta">
+          <div><dt>Storage</dt><dd>Browser, then SQLite</dd></div>
+          <div><dt>Sync</dt><dd>Incremental, last write wins</dd></div>
+          <div><dt>Themes</dt><dd>Dark, light, system</dd></div>
+          <div><dt>License</dt><dd>MIT</dd></div>
+        </dl>
+      </div>
+      <figure class="phone scrub">
+        <img src="assets/mobile.png" width="1170" height="2532" loading="lazy" alt="CalmList's Today view on a phone, with a floating add button." />
+      </figure>
+    </section>
+
+    <section class="chapter" id="self-host">
+      <div class="heading reveal">
+        <p class="eyebrow">Self-host</p>
+        <h2 class="display-md">One command.<br />Your server.</h2>
+        <p class="intro">The sync service is a single Node process with an SQLite file. It also serves the app, so one container is the whole product.</p>
+      </div>
+      <div class="code reveal">
+        <p class="label">Docker</p>
+<pre><code>docker build -t calmlist .
+docker run -p 8787:8787 -v calmlist:/data calmlist</code></pre>
+        <p class="label">Or from source · Node 24</p>
+<pre><code>npm install
+npm run build
+npm start          # http://localhost:8787</code></pre>
+      </div>
+    </section>
+
+    <section class="closing has-dots">
+      <canvas class="dots" aria-hidden="true"></canvas>
+      <p class="eyebrow">Ready when you are</p>
+      <h2 class="display-md">Clear your head.<br />Start a list.</h2>
+      <div class="actions">
+        <a class="btn btn-inverse" href="app/">Open the App</a>
+        <a class="btn btn-secondary" href="https://github.com/corund207/CalmList#readme" rel="noopener">Read the Docs</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div>
+      <strong>CalmList</strong>
+      <span class="footer-tag">A calm, keyboard-first task manager.</span>
+    </div>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="app/">App</a>
+      <a href="https://github.com/corund207/CalmList" rel="noopener">GitHub ↗</a>
+      <a href="https://github.com/corund207/CalmList/blob/main/LICENSE" rel="noopener">License ↗</a>
+    </nav>
+    <span class="copyright">© 2026 JONAH CHANG · MIT</span>
+  </footer>
+
+  <script src="site.js" defer></script>
+</body>
+</html>
