@@ -4,12 +4,13 @@ import { emptyData, type Data } from '../lib/types'
 import { importData } from '../store/actions'
 import { usePrefs } from '../store/prefs'
 import { ThemePicker } from '../themes/ThemePicker'
+import { Integrations } from './Integrations'
 import { SyncSettings } from './SyncSettings'
 import { useStore } from '../store/store'
 import { useUI } from '../store/ui'
 import { Modal } from './Modal'
 
-type Tab = 'appearance' | 'general' | 'account' | 'data'
+type Tab = 'appearance' | 'general' | 'account' | 'integrations' | 'data'
 
 function General() {
   const { dailyGoal, set } = usePrefs()
@@ -86,7 +87,7 @@ function DataPane() {
 export function SettingsDialog() {
   const close = useUI((s) => s.close)
   const [tab, setTab] = useState<Tab>('appearance')
-  const tabs: [Tab, string][] = [['appearance', 'Appearance'], ['general', 'General'], ['account', 'Sync'], ['data', 'Data']]
+  const tabs: [Tab, string][] = [['appearance', 'Appearance'], ['general', 'General'], ['account', 'Sync'], ['integrations', 'Integrations'], ['data', 'Data']]
   return (
     <Modal onClose={close} label="Settings" size="lg">
       <div className="form">
@@ -99,6 +100,7 @@ export function SettingsDialog() {
         {tab === 'appearance' && <ThemePicker />}
         {tab === 'general' && <General />}
         {tab === 'account' && <SyncSettings />}
+        {tab === 'integrations' && <Integrations onOpenSync={() => setTab('account')} />}
         {tab === 'data' && <DataPane />}
       </div>
     </Modal>

@@ -192,3 +192,10 @@ code { font-family: var(--font-mono); font-size: 0.92em; text-transform: none; }
 .setup .actions { margin-top: 10px; }
 .setup .link svg, .inline-icon { vertical-align: -2px; }
 .form-hint[data-ok] { color: var(--accent); }
+.integrations { gap: 12px; }
+.integration { display: grid; gap: 8px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-soft); }
+.integration header { display: flex; align-items: center; gap: 10px; }
+.integration header .provider-icon { margin: 0; }
+.integration strong { flex: 1; color: var(--foreground-bright); font-size: 15px; font-weight: 560; }
+.integration p { color: var(--foreground-soft); font-size: 14px; }
+.integration-status { color: var(--accent); }
