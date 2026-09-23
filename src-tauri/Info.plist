@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>CalmList listens only while you use Ramble, to turn what you say into tasks.</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>CalmList turns what you say in Ramble into text to create tasks.</string>
+</dict>
+</plist>

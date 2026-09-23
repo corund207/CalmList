@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { LocalBackend, RemoteBackend, Unauthorized, type Backend, type Change, type Transport } from './backend'
+import { publicAppUrl } from '../lib/platform'
 import type { Session } from './prefs'
 
 /** Where a device keeps and syncs its data. */
@@ -125,8 +126,8 @@ export interface Credentials {
 /** Bumped when the Terms or Privacy Policy change materially; stored with each sign-up. */
 export const POLICY_VERSION = '2026-09-23'
 
-/** This app's address without any route, for email links. */
-export const appUrl = () => `${location.origin}${location.pathname}`
+/** This app's address without any route, for email links (the hosted app when running natively). */
+export const appUrl = publicAppUrl
 
 export async function signIn(provider: ProviderConfig, mode: 'login' | 'signup', creds: Credentials): Promise<Session> {
   if (provider.kind === 'calmlist') return call<Session>(provider.url, `/api/auth/${mode}`, { method: 'POST', body: JSON.stringify(creds) })

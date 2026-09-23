@@ -9,6 +9,7 @@ import { complete, remove } from '../store/taskOps'
 import { useUI } from '../store/ui'
 import { Checkbox } from './Checkbox'
 import { DatePicker, PriorityPicker, ProjectPicker } from './pickers'
+import { publicAppUrl } from '../lib/platform'
 import { Popover, usePopover } from './Popover'
 import { TaskEditor } from './TaskEditor'
 
@@ -139,7 +140,7 @@ export const TaskItem = memo(function TaskItem({ task, showProject, hideDate, de
               <button
                 className="menu-item"
                 onClick={() => {
-                  navigator.clipboard?.writeText(`${location.origin}${location.pathname}#/task/${task.id}`)
+                  navigator.clipboard?.writeText(`${publicAppUrl()}#/task/${task.id}`)
                   toast('Link copied')
                   more.close()
                 }}

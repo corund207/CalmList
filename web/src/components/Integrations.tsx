@@ -5,6 +5,7 @@ import { parseTodoistCSV } from '../lib/todoist'
 import { calendarLinked, connectCalendar, disconnectCalendar, syncCalendar, useGcal } from '../store/gcal'
 import { importTodoistProject } from '../store/importers'
 import { usePrefs } from '../store/prefs'
+import { isNative, openExternal, WEB_APP_URL } from '../lib/platform'
 import { PRESETS, PROVIDER_NAMES } from '../store/providers'
 import { useStore } from '../store/store'
 import { useUI } from '../store/ui'
@@ -43,7 +44,12 @@ function GoogleCalendar({ dated }: { dated: number }) {
         Adds your {dated} dated task{dated === 1 ? '' : 's'} to a separate calendar called <strong>CalmList</strong> and keeps it up to date as you work.
         Only tasks with a date or time are added. CalmList can only see calendars it created, never your others.
       </p>
-      {!PRESETS.googleClientId ? (
+      {isNative ? (
+        <>
+          <p className="form-hint">Google doesn't allow its sign-in inside apps like this one, so connect and sync the calendar from the web app. Your tasks are the same there.</p>
+          <div className="actions"><button className="btn btn-secondary btn-sm" onClick={() => void openExternal(`${WEB_APP_URL}#/today`)}>Open the Web App</button></div>
+        </>
+      ) : !PRESETS.googleClientId ? (
         <p className="form-hint">This copy of CalmList has no Google client id. Set <code>VITE_GOOGLE_CLIENT_ID</code> (see the README) to turn it on.</p>
       ) : !linked ? (
         <div className="actions"><button className="btn btn-secondary btn-sm" disabled={busy} onClick={() => go(connectCalendar)}>Connect Google Calendar</button></div>

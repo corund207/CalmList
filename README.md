@@ -8,7 +8,7 @@ A calm, keyboard-first task manager inspired by Todoist.<br />
 Local-first in the browser, with free on-device AI, 48 themes, Claude and ChatGPT connectors,<br />
 Google Calendar sync, and sync through Supabase or a server you host yourself.
 
-[**Open the app**](https://corund207.github.io/CalmList/app/) · [**Website**](https://corund207.github.io/CalmList/) · [AI](#ai-free-by-default) · [Assistants](#ai-assistants-mcp) · [Sync](#sync-options) · [Vercel](#hosting-on-vercel) · [Status](#service-status) · [Privacy](#privacy-licenses-and-compliance)
+[**Open the app**](https://corund207.github.io/CalmList/app/) · [**Website**](https://corund207.github.io/CalmList/) · [AI](#ai-free-by-default) · [Assistants](#ai-assistants-mcp) · [Apps](#mac-windows-and-ios-apps) · [Sync](#sync-options) · [Vercel](#hosting-on-vercel) · [Status](#service-status) · [Privacy](#privacy-licenses-and-compliance)
 
 [![CI and Pages](https://github.com/corund207/CalmList/actions/workflows/pages.yml/badge.svg)](https://github.com/corund207/CalmList/actions/workflows/pages.yml)
 ![Node 24](https://img.shields.io/badge/node-24-000000?labelColor=1d1d1f)
@@ -34,6 +34,7 @@ Google Calendar sync, and sync through Supabase or a server you host yourself.
 | **48 themes** | Dark, light, dynamic (follows the clock or the seasons), animated (aurora, starfield, synthwave, rain…) and niche (Nord, Dracula, Terminal, Pocket…), plus a custom accent colour. |
 | **Free AI** | Ramble, Task Assist and Filter Assist, running on-device at no cost, or with your own Claude, ChatGPT, Gemini or Grok key. |
 | **AI assistants** | Connect Claude, ChatGPT or any MCP client to read, add and complete tasks, with per-assistant tokens you can revoke. |
+| **Mac, Windows, iOS** | Native apps built with Tauri from the same code, a few MB each, syncing with the same account. |
 | **Sync your way** | Works offline in the browser. Connect Supabase Cloud, a self-hosted Supabase, or the bundled CalmList server; offline edits queue and send on reconnect. |
 | **Integrations** | Live sync of dated tasks to a dedicated *CalmList* Google Calendar, .ics export for Apple and Outlook, and Todoist import (CSV). |
 | **Yours** | Export, import or delete everything at any time. No telemetry. GDPR-ready. MIT licensed. |
@@ -111,6 +112,41 @@ Gemini and Grok support is planned.
 Tools: `list_tasks` (any filter query), `add_task` (with Quick Add syntax), `update_task`, `complete_task` (recurring tasks roll forward), `reopen_task`, `delete_task`, `list_projects`, `add_project`, plus `search` and `fetch` for ChatGPT's connector format.
 
 Each assistant gets its own token. Only a SHA-256 hash is stored, and you can revoke it at any time. The endpoint has no admin key: it passes the token to two Postgres functions, `calmlist_agent_read` and `calmlist_agent_write`, which resolve it to one user and touch only that user's rows. The database tests prove a token can never reach another account.
+
+## Mac, Windows and iOS apps
+
+The same app, in a native window. [Tauri 2](https://tauri.app) wraps the web app in the system's own web engine (WebView2 on Windows, WebKit on macOS and iOS), so the installers are small (a few MB) and every feature behaves as it does on the web. Tasks are stored on the device, and sync through the same Supabase account.
+
+| Platform | Get it | Notes |
+| --- | --- | --- |
+| **Windows 10/11** | `.msi` or `-setup.exe` from [Releases](https://github.com/corund207/CalmList/releases) or the *Native apps* workflow's artifacts | Unsigned, so SmartScreen may warn: *More info → Run anyway*. |
+| **macOS 11+** (Apple Silicon and Intel) | `.dmg` from the same places | Unsigned, so right-click the app → *Open* the first time, or run `xattr -cr /Applications/CalmList.app`. |
+| **iOS 16+** | See below | Installing on an iPhone needs Xcode, and TestFlight or the App Store needs an Apple Developer account. |
+
+What differs from the web:
+
+- Links to other sites open in your default browser.
+- Email links (confirmation, password reset) and copied task links point to the hosted web app, since the native app has no web address of its own.
+- **Google Calendar** is connected from the web app: Google blocks its sign-in inside embedded web views. The calendar keeps updating whenever the web app is open.
+- Voice input uses on-device Whisper where the system recognizer isn't available (WebKit). The app asks for the microphone the first time you use Ramble.
+
+### Building
+
+```bash
+npm install
+npm run app:dev        # native window with hot reload (needs Rust: https://rustup.rs)
+npm run app:build      # installers for this OS in src-tauri/target/release/bundle/
+```
+
+Windows needs the Visual Studio C++ Build Tools and WebView2 (built into Windows 11). macOS needs the Xcode command line tools.
+
+**CI:** the [Native apps](.github/workflows/native.yml) workflow builds Windows, macOS (universal) and iOS on GitHub's runners. Run it from the Actions tab and download the artifacts, or push a tag (`git tag v1.0.0 && git push --tags`) to get a draft release with the installers attached.
+
+**iOS:**
+
+- **Without a paid Apple account:** CI makes an unsigned Simulator build. On a Mac with Xcode, `npm run app:ios` runs the app on a simulator, or on your own iPhone signed with a free Apple ID (such apps expire after 7 days).
+- **With an Apple Developer account ($99/year):** set the Actions variable `APPLE_DEVELOPMENT_TEAM` and the secrets `APPLE_API_ISSUER`, `APPLE_API_KEY` and `APPLE_API_KEY_CONTENT` (an App Store Connect API key). CI then builds a signed `.ipa` for TestFlight.
+- **Signing and notarizing macOS:** set `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`, `APPLE_PASSWORD` and `APPLE_TEAM_ID`. This removes the first-launch warning.
 
 ## Sync options
 
@@ -349,6 +385,7 @@ web/                 React 19 + Vite + TypeScript
   src/views/         Today, Upcoming, Project/Board, Filters & Labels, Completed, Search
 server/              Hono on Node 24, node:sqlite, runs TypeScript natively
 functions/           Vercel functions: /api/mcp, /api/stats, /api/status-check
+src-tauri/           the native shell for Windows, macOS and iOS (Tauri 2)
 supabase/            Supabase CLI config, migrations, and the user-isolation tests
 scripts/             build-site.mjs (site, licenses, Vercel output), supabase-selfhost.mjs
 site/                landing page, Terms & Privacy

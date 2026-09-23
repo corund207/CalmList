@@ -3,6 +3,7 @@
 // created, so CalmList can never read or change the person's other calendars.
 import { create } from 'zustand'
 import { eventId, fingerprint, planSync, type CalendarEvent } from '../lib/gcal'
+import { publicAppUrl } from '../lib/platform'
 import { usePrefs } from './prefs'
 import { PRESETS } from './providers'
 import { useStore } from './store'
@@ -104,7 +105,6 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T | null> {
 /* ─── Sync ──────────────────────────────────────────────────────────────── */
 
 const timeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-const appUrl = () => `${location.origin}${location.pathname}`
 
 /** Finds the CalmList calendar this app made, or makes it. */
 async function ensureCalendar(saved: Saved): Promise<string> {
@@ -144,7 +144,7 @@ export function syncCalendar(): Promise<void> {
     useGcal.setState({ busy: true })
     try {
       const calendarId = await ensureCalendar(saved)
-      const plan = planSync(useStore.getState().data, saved.synced, timeZone(), appUrl())
+      const plan = planSync(useStore.getState().data, saved.synced, timeZone(), publicAppUrl())
       for (const event of plan.upsert) {
         await upsert(calendarId, event)
         saved.synced[event.extendedProperties.private.calmlist] = fingerprint(event)

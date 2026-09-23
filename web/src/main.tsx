@@ -1,11 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import { routeExternalLinks } from './lib/platform'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/app.css'
 import './styles/tasks.css'
 import './styles/backdrops.css'
+
+routeExternalLinks()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

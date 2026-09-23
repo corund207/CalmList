@@ -18,6 +18,7 @@
     "@huggingface/transformers": "^4.3.0",
     "@mlc-ai/web-llm": "^0.2.85",
     "@supabase/supabase-js": "^2.117.1",
+    "@tauri-apps/plugin-opener": "^2.5.5",
     "lucide-react": "^1.47.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

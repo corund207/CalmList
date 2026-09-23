@@ -12,6 +12,9 @@
     "dev:server": "npm run dev --workspace server",
     "build": "npm run build --workspace web && npm run build --workspace server",
     "build:site": "node scripts/build-site.mjs",
+    "app:dev": "tauri dev",
+    "app:build": "tauri build",
+    "app:ios": "tauri ios dev",
     "start": "npm run start --workspace server",
     "test": "npm test --workspace web && npm test --workspace server && npm run test:db",
     "typecheck": "npm run typecheck --workspace web && npm run typecheck --workspace server && tsc -p functions",
@@ -26,6 +29,7 @@
   "license": "MIT",
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@tauri-apps/cli": "^2.11.5",
     "rolldown": "^1.2.10"
   }
 }
