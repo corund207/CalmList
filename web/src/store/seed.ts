@@ -23,7 +23,7 @@ export const seed = () => {
   const parent = addTask({ content: 'Open a task to add notes, subtasks and comments', projectId: tour.id, sectionId: basics.id, due: d(1) })
   addTask({ content: 'This is a subtask', projectId: tour.id, sectionId: basics.id, parentId: parent.id })
   addTask({ content: 'Drag tasks to reorder them or move them between sections', projectId: tour.id, sectionId: basics.id })
-  addTask({ content: 'Water the plants every other day', projectId: tour.id, sectionId: power.id,
+  addTask({ content: 'Water the plants (repeats every other day)', projectId: tour.id, sectionId: power.id,
     due: { ...d(0), recurrence: { every: 2, unit: 'day' } }, priority: 3 })
   addTask({ content: 'Press / to search, ? for every shortcut', projectId: tour.id, sectionId: power.id, labels: [quick.id], due: d(2) })
   addTask({ content: 'Switch this project to a board from its ••• menu', projectId: tour.id, sectionId: power.id, due: d(3) })

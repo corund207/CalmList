@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
-import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom'
 import { Dialogs } from './components/Dialogs'
+import { TaskDetailHost } from './components/TaskDetail'
 import { useShortcuts } from './components/Shortcuts'
 import { Sidebar } from './components/Sidebar'
 import { Toasts } from './components/Toasts'
@@ -24,10 +25,18 @@ function Layout() {
           {ready && <Outlet />}
         </main>
       </div>
+      {ready && <TaskDetailHost />}
       <Dialogs />
       <Toasts />
     </>
   )
+}
+
+/** Shared task links (#/task/:id) open the task over its project. */
+function TaskLink() {
+  const { id = '' } = useParams()
+  const task = useStore((s) => s.data.tasks[id])
+  return <Navigate to={task ? `/project/${task.projectId}?task=${id}` : '/today'} replace />
 }
 
 export function App() {
@@ -42,6 +51,7 @@ export function App() {
           <Route path="/today" element={<Today />} />
           <Route path="/upcoming" element={<Upcoming />} />
           <Route path="/project/:id" element={<ProjectView />} />
+          <Route path="/task/:id" element={<TaskLink />} />
           <Route path="*" element={<Navigate to="/today" replace />} />
         </Route>
       </Routes>

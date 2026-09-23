@@ -11,6 +11,7 @@ export interface Draft {
   labels: ID[]
   projectId: ID
   sectionId: ID | null
+  parentId?: ID | null
 }
 
 const byName = <T extends { name: string }>(items: T[], name: string) => items.find((i) => i.name.toLowerCase() === name.toLowerCase())
@@ -49,5 +50,6 @@ export const resolve = (draft: Draft, parsed: Parsed, data: Data) => {
     projectId,
     sectionId,
     labels,
+    ...(draft.parentId && projectId === draft.projectId && { parentId: draft.parentId }),
   }
 }
