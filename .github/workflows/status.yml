@@ -15,7 +15,8 @@ jobs:
     if: vars.STATUS_URL != ''
     runs-on: ubuntu-latest
     steps:
-      - run: curl --fail-with-body -sS -H "Authorization: Bearer $CRON_SECRET" "$STATUS_URL"
+      - run: |
+          curl --fail-with-body -sS -H "Authorization: Bearer $CRON_SECRET" "$STATUS_URL"
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           STATUS_URL: ${{ vars.STATUS_URL }}
