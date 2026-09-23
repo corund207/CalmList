@@ -1,0 +1,74 @@
+/* Design tokens — mirrored from the Jonah Chang design system (tokens.json). Dark is primary. */
+:root {
+  --background: #000000;
+  --surface: #1d1d1f;
+  --surface-soft: #161617;
+  --surface-deep: #0a0a0a;
+  --foreground: #f5f5f7;
+  --foreground-soft: #d2d2d7;
+  --foreground-bright: #ffffff;
+  --muted: #86868b;
+  --muted-dark: #6e6e73;
+  --accent: #2997ff;
+  --accent-bright: #64b5ff;
+  --action: #0071e3;
+  --on-action: #ffffff;
+  --line: rgba(245, 245, 247, 0.17);
+  --line-strong: rgba(245, 245, 247, 0.27);
+  --line-control: rgba(245, 245, 247, 0.42);
+  --hover-wash: rgba(245, 245, 247, 0.06);
+  --row-wash: rgba(245, 245, 247, 0.035);
+  --header-scrim: rgba(0, 0, 0, 0.88);
+  --placeholder: #111111;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "SFMono-Regular", ui-monospace, Menlo, Monaco, Consolas, monospace;
+
+  --space-actions: 9px;
+  --space-stack: 18px;
+  --space-card: 24px;
+  --space-panel: 28px;
+  --space-block: 42px;
+  --gutter: clamp(20px, 4.8vw, 78px);
+
+  --radius-pill: 999px;
+  --radius-chapter: 28px;
+  --radius-card: 24px;
+  --radius-panel: 20px;
+  --radius-video: 12px;
+
+  --control-height: 42px;
+  --touch-target: 44px;
+  --measure: 680px;
+
+  --duration-fast: 180ms;
+  --duration-base: 250ms;
+  --ease-ui: ease;
+  --ease-magnetic: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-reveal: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-row: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --background: #ffffff;
+  --surface: #f5f5f7;
+  --surface-soft: #fbfbfd;
+  --surface-deep: #e8e8ed;
+  --foreground: #1d1d1f;
+  --foreground-soft: #424245;
+  --foreground-bright: #000000;
+  --muted: #6e6e73;
+  --muted-dark: #6e6e73;
+  --accent: #0066cc;
+  --accent-bright: #0071e3;
+  --line: rgba(0, 0, 0, 0.12);
+  --line-strong: rgba(0, 0, 0, 0.2);
+  --line-control: rgba(29, 29, 31, 0.45);
+  --hover-wash: rgba(0, 0, 0, 0.05);
+  --row-wash: rgba(0, 0, 0, 0.03);
+  --header-scrim: rgba(255, 255, 255, 0.88);
+  --placeholder: #f0f0f2;
+  color-scheme: light;
+}

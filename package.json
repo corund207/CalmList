@@ -1,0 +1,17 @@
+{
+  "name": "calmlist",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A calm, keyboard-first task manager inspired by Todoist.",
+  "workspaces": ["web", "server"],
+  "scripts": {
+    "dev": "npm run dev --workspace web",
+    "dev:server": "npm run dev --workspace server",
+    "build": "npm run build --workspace web && npm run build --workspace server",
+    "start": "npm run start --workspace server",
+    "test": "npm test --workspace web && npm test --workspace server",
+    "typecheck": "npm run typecheck --workspace web && npm run typecheck --workspace server"
+  },
+  "engines": { "node": ">=22.5" },
+  "license": "MIT"
+}
