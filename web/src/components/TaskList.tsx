@@ -14,13 +14,15 @@ interface TreeProps {
   showProject?: boolean
   hideDate?: boolean
   handle?: ReactNode
+  /** Hide subtasks (board cards show a count instead). */
+  leaf?: boolean
 }
 
 /** A task with its open subtasks nested below, collapsible. */
-export function TaskTree({ task, depth = 0, showProject, hideDate, handle }: TreeProps) {
+export function TaskTree({ task, depth = 0, showProject, hideDate, handle, leaf }: TreeProps) {
   const data = useData()
   const [collapsed, setCollapsed] = useState(false)
-  const kids = children(data, task.id)
+  const kids = leaf ? [] : children(data, task.id)
   return (
     <>
       <TaskItem
@@ -47,11 +49,11 @@ interface ListProps {
 
 export function TaskList({ tasks, nested, showProject, hideDate }: ListProps) {
   return (
-    <ul className="task-list">
+    <div className="task-list" role="list">
       {tasks.map((t) =>
         nested ? <TaskTree key={t.id} task={t} showProject={showProject} hideDate={hideDate} /> : <TaskItem key={t.id} task={t} showProject={showProject} hideDate={hideDate} />,
       )}
-    </ul>
+    </div>
   )
 }
 

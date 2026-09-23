@@ -4,6 +4,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Page } from '../components/Page'
 import { Popover, usePopover } from '../components/Popover'
 import { AddSection, SectionHead } from '../components/Sections'
+import { SortableTasks, TaskDnd } from '../components/TaskDnd'
 import { InlineAdd, TaskList } from '../components/TaskList'
 import { useData } from '../hooks'
 import { countOpen, rootTasks, sectionsOf } from '../lib/select'
@@ -104,8 +105,8 @@ export function ProjectView({ id: fixed }: { id?: string }) {
       {board ? (
         <Board project={project} />
       ) : (
-        <>
-          <TaskList tasks={rootTasks(data, id, null)} nested />
+        <TaskDnd projectId={id}>
+          <SortableTasks tasks={rootTasks(data, id, null)} sectionId={null} nested />
           <InlineAdd defaults={{ projectId: id }} />
           {sections.map((s) => {
             const tasks = rootTasks(data, id, s.id)
@@ -114,7 +115,7 @@ export function ProjectView({ id: fixed }: { id?: string }) {
                 <SectionHead section={s} count={tasks.length} />
                 {!s.collapsed && (
                   <>
-                    <TaskList tasks={tasks} nested />
+                    <SortableTasks tasks={tasks} sectionId={s.id} nested />
                     <InlineAdd defaults={{ projectId: id, sectionId: s.id }} />
                   </>
                 )}
@@ -122,7 +123,7 @@ export function ProjectView({ id: fixed }: { id?: string }) {
             )
           })}
           <AddSection projectId={id} />
-        </>
+        </TaskDnd>
       )}
 
       {showCompleted && completed.length > 0 && (

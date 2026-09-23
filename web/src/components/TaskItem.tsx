@@ -51,7 +51,7 @@ export const TaskItem = memo(function TaskItem({ task, showProject, hideDate, de
 
   if (editing)
     return (
-      <li className="task-edit" style={{ '--depth': depth } as CSSProperties}>
+      <div role="listitem" className="task-edit" style={{ '--depth': depth } as CSSProperties}>
         <TaskEditor
           submitLabel="Save"
           initial={{ ...task }}
@@ -61,11 +61,12 @@ export const TaskItem = memo(function TaskItem({ task, showProject, hideDate, de
             setEditing(false)
           }}
         />
-      </li>
+      </div>
     )
 
   return (
-    <li
+    <div
+      role="listitem"
       className="task"
       data-checking={checking || undefined}
       data-completed={task.completed || undefined}
@@ -151,6 +152,6 @@ export const TaskItem = memo(function TaskItem({ task, showProject, hideDate, de
           )}
         </Popover>
       )}
-    </li>
+    </div>
   )
 })
