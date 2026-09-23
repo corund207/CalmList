@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react'
 import { useEffect } from 'react'
 import { HashRouter, Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom'
 import { Dialogs } from './components/Dialogs'
@@ -6,6 +7,7 @@ import { useShortcuts } from './components/Shortcuts'
 import { Sidebar } from './components/Sidebar'
 import { Toasts } from './components/Toasts'
 import { useTheme } from './hooks'
+import { useUI } from './store/ui'
 import { boot, useStore } from './store/store'
 import { Inbox, ProjectView } from './views/ProjectView'
 import { FilterView, FiltersLabels, LabelView } from './views/FiltersLabels'
@@ -28,6 +30,7 @@ function Layout() {
           {ready && <Outlet />}
         </main>
       </div>
+      <button className="fab" aria-label="Add task" onClick={() => useUI.getState().open({ type: 'quickAdd' })}><Plus size={26} /></button>
       {ready && <TaskDetailHost />}
       <Dialogs />
       <Toasts />

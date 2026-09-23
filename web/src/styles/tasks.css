@@ -354,3 +354,19 @@ kbd {
 .keys-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 42px; border-bottom: 1px solid var(--line); }
 .keys-row dt { display: flex; align-items: center; gap: 4px; }
 .keys-row dd { margin: 0; color: var(--foreground-soft); font-size: 14px; text-align: right; }
+
+/* ─── Phones ─────────────────────────────────────────────────────────────── */
+.fab {
+  position: fixed; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 40; width: 56px; height: 56px;
+  display: none; place-items: center; border-radius: 50%; background: var(--action); color: var(--on-action);
+}
+.fab:active { transform: scale(0.97); }
+@media (max-width: 760px) {
+  .fab { display: grid; }
+  .task-actions { display: none; }
+  .meta.is-project { margin-left: 0; }
+  .page { padding-bottom: 120px; }
+  .week-day .micro { font-size: 9px; }
+  .toasts { bottom: 92px; }
+  .drag-handle { display: none; }
+}
