@@ -9,11 +9,15 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>CalmList</title>
     <script>
-      // Resolve the theme before first paint so there is no flash.
+      // Paint the last-used theme before the app loads, so there is no flash.
       try {
-        var t = JSON.parse(localStorage.getItem('calmlist:prefs') || '{}').theme || 'system'
-        if (t === 'system') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-        document.documentElement.dataset.theme = t
+        var c = JSON.parse(localStorage.getItem('calmlist:theme-cache') || 'null')
+        var r = document.documentElement
+        if (c) {
+          r.dataset.theme = c.scheme
+          r.dataset.themeId = c.id
+          for (var k in c.vars) r.style.setProperty(k, c.vars[k])
+        } else if (matchMedia('(prefers-color-scheme: light)').matches) r.dataset.theme = 'light'
       } catch (e) {}
     </script>
   </head>

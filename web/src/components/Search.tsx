@@ -1,10 +1,12 @@
-import { ArrowRight, CalendarDays, CalendarRange, CircleCheck, Filter as FilterIcon, Inbox, Keyboard, LayoutGrid, Plus, Search as SearchIcon, Settings } from 'lucide-react'
+import { ArrowRight, Palette, CalendarDays, CalendarRange, CircleCheck, Filter as FilterIcon, Inbox, Keyboard, LayoutGrid, Plus, Search as SearchIcon, Settings } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../hooks'
 import { formatDue } from '../lib/dates'
 import { validateFilter } from '../lib/filter'
 import { byOrder } from '../lib/select'
+import { usePrefs } from '../store/prefs'
+import { THEMES } from '../themes/themes'
 import { useUI } from '../store/ui'
 import { Modal } from './Modal'
 import { SHORTCUTS } from './Shortcuts'
@@ -63,7 +65,11 @@ export function SearchDialog() {
     const asFilter: Item[] = !validateFilter(q)
       ? [{ id: 'q-filter', group: 'Query', icon: <FilterIcon size={16} />, label: `Show tasks matching “${q.trim()}”`, run: go(`/search?q=${encodeURIComponent(q.trim())}`) }]
       : [{ id: 'q-text', group: 'Query', icon: <SearchIcon size={16} />, label: `Search all tasks for “${q.trim()}”`, run: go(`/search?q=${encodeURIComponent(`search: ${q.trim()}`)}`) }]
-    return [...tasks, ...places, ...asFilter, ...commands.filter((c) => norm(c.label).includes(query))]
+    const themes: Item[] = THEMES.filter((t) => norm(`theme ${t.name} ${t.group}`).includes(query)).slice(0, 8).map((t) => ({
+      id: `theme-${t.id}`, group: 'Themes', icon: <Palette size={16} />, label: `Theme: ${t.name}`, hint: t.group,
+      run: () => (usePrefs.getState().set({ theme: t.id }), close()),
+    }))
+    return [...tasks, ...places, ...asFilter, ...themes, ...commands.filter((c) => norm(c.label).includes(query))]
   }, [q, data, navigate, close, open])
 
   const current = Math.min(active, items.length - 1)

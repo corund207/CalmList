@@ -6,9 +6,11 @@ import { TaskDetailHost } from './components/TaskDetail'
 import { useShortcuts } from './components/Shortcuts'
 import { Sidebar } from './components/Sidebar'
 import { Toasts } from './components/Toasts'
-import { useTheme } from './hooks'
 import { useUI } from './store/ui'
+import { usePrefs } from './store/prefs'
 import { boot, useStore } from './store/store'
+import { useTheme } from './themes/apply'
+import { Backdrop } from './themes/Backdrop'
 import { Inbox, ProjectView } from './views/ProjectView'
 import { FilterView, FiltersLabels, LabelView } from './views/FiltersLabels'
 import { Completed } from './views/Completed'
@@ -46,11 +48,13 @@ function TaskLink() {
 }
 
 export function App() {
-  useTheme()
+  const theme = useTheme()
+  const motion = usePrefs((s) => s.motion)
   useEffect(() => void boot(), [])
 
   return (
     <HashRouter>
+      <Backdrop kind={theme.backdrop} motion={motion} themeId={theme.id} />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/inbox" element={<Inbox />} />

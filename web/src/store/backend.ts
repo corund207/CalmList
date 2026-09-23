@@ -17,6 +17,16 @@ export interface Backend {
   firstSync?: Promise<void>
 }
 
+/** How a remote service moves changes. Implemented per provider (CalmList server, Supabase). */
+export interface Transport {
+  pull(since: number): Promise<{ rev: number; changes: Change[] }>
+  push(changes: Change[]): Promise<void>
+  /** Optional push notifications from the server; call `poke` to sync now. */
+  subscribe?(poke: () => void): () => void
+}
+
+export class Unauthorized extends Error {}
+
 const read = <T,>(key: string): T | null => {
   try {
     const raw = localStorage.getItem(key)
@@ -66,30 +76,29 @@ export class LocalBackend implements Backend {
   }
 }
 
-interface CloudCache {
+interface Cache {
   data: Data
   rev: number
   outbox: Change[]
 }
 
 /**
- * Talks to the CalmList sync service. Keeps an offline cache and an outbox so
- * edits made without a connection are sent when it returns.
+ * Syncs through any Transport. Keeps an offline cache and an outbox so edits
+ * made without a connection are sent when it returns.
  */
-export class CloudBackend implements Backend {
-  private cache: CloudCache
-  private key: string
+export class RemoteBackend implements Backend {
+  private cache: Cache
   private flushing = false
   private settle!: () => void
   firstSync = new Promise<void>((r) => (this.settle = r))
+  private onRemote: (changes: Change[]) => void = () => {}
+  private onStatus: (s: SyncStatus) => void = () => {}
 
   constructor(
-    private api: string,
-    private token: string,
-    userId: string,
+    private transport: Transport,
+    private key: string,
   ) {
-    this.key = `calmlist:cloud:${userId}`
-    const cached = read<CloudCache>(this.key)
+    const cached = read<Cache>(key)
     this.cache = { data: normalize(cached?.data ?? null), rev: cached?.rev ?? 0, outbox: cached?.outbox ?? [] }
   }
 
@@ -110,32 +119,27 @@ export class CloudBackend implements Backend {
     this.onStatus = onStatus
     const tick = () => void this.sync()
     tick()
-    const interval = setInterval(tick, 20_000)
+    // With live updates the poll is only a safety net.
+    const unsubscribe = this.transport.subscribe?.(tick)
+    const interval = setInterval(tick, unsubscribe ? 120_000 : 20_000)
     const onVisible = () => document.visibilityState === 'visible' && tick()
     window.addEventListener('online', tick)
     document.addEventListener('visibilitychange', onVisible)
     return () => {
+      unsubscribe?.()
       clearInterval(interval)
       window.removeEventListener('online', tick)
       document.removeEventListener('visibilitychange', onVisible)
     }
   }
 
-  private onRemote: (changes: Change[]) => void = () => {}
-  private onStatus: (s: SyncStatus) => void = () => {}
-
   private save() {
     write(this.key, this.cache)
   }
 
-  private async request<T>(path: string, init?: RequestInit): Promise<T> {
-    const res = await fetch(`${this.api}${path}`, {
-      ...init,
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${this.token}` },
-    })
-    if (res.status === 401) window.dispatchEvent(new Event('calmlist:unauthorized'))
-    if (!res.ok) throw new Error(`${res.status}`)
-    return res.json() as Promise<T>
+  private fail(e: unknown) {
+    if (e instanceof Unauthorized) window.dispatchEvent(new Event('calmlist:unauthorized'))
+    this.onStatus(navigator.onLine ? 'error' : 'offline')
   }
 
   private async flush() {
@@ -146,13 +150,13 @@ export class CloudBackend implements Backend {
       while (this.cache.outbox.length) {
         this.onStatus('syncing')
         const sent = new Set(this.cache.outbox)
-        await this.request('/api/sync', { method: 'POST', body: JSON.stringify({ changes: [...sent] }) })
+        await this.transport.push([...sent])
         this.cache.outbox = this.cache.outbox.filter((c) => !sent.has(c))
         this.save()
       }
       this.onStatus('synced')
-    } catch {
-      this.onStatus(navigator.onLine ? 'error' : 'offline')
+    } catch (e) {
+      this.fail(e)
     } finally {
       this.flushing = false
     }
@@ -161,15 +165,15 @@ export class CloudBackend implements Backend {
   private async sync() {
     await this.flush()
     try {
-      const { rev, changes } = await this.request<{ rev: number; changes: Change[] }>(`/api/sync?since=${this.cache.rev}`)
+      const { rev, changes } = await this.transport.pull(this.cache.rev)
       const pending = new Set(this.cache.outbox.map((c) => `${c.kind}:${c.id}`))
       const incoming = changes.filter((c) => KINDS.includes(c.kind) && !pending.has(`${c.kind}:${c.id}`))
-      this.cache = { ...this.cache, rev, data: applyChanges(this.cache.data, incoming) }
+      this.cache = { ...this.cache, rev: Math.max(rev, this.cache.rev), data: applyChanges(this.cache.data, incoming) }
       this.save()
       if (incoming.length) this.onRemote(incoming)
       if (!this.cache.outbox.length) this.onStatus('synced')
-    } catch {
-      this.onStatus(navigator.onLine ? 'error' : 'offline')
+    } catch (e) {
+      this.fail(e)
     }
     this.settle()
   }

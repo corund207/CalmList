@@ -5,6 +5,7 @@ import './styles/tokens.css'
 import './styles/base.css'
 import './styles/app.css'
 import './styles/tasks.css'
+import './styles/backdrops.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

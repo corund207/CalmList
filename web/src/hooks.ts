@@ -1,24 +1,7 @@
 import { useEffect, useState, type RefObject } from 'react'
-import { resolveTheme, usePrefs } from './store/prefs'
 import { useStore } from './store/store'
 
 export const useData = () => useStore((s) => s.data)
-
-/** Applies the theme preference to <html>, following the OS when set to "system". */
-export const useTheme = () => {
-  const theme = usePrefs((s) => s.theme)
-  useEffect(() => {
-    const apply = () => {
-      const t = resolveTheme(theme)
-      document.documentElement.dataset.theme = t
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#ffffff' : '#000000')
-    }
-    apply()
-    const mq = matchMedia('(prefers-color-scheme: light)')
-    mq.addEventListener('change', apply)
-    return () => mq.removeEventListener('change', apply)
-  }, [theme])
-}
 
 export const useScrolled = (threshold = 24) => {
   const [scrolled, setScrolled] = useState(false)

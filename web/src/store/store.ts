@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { emptyData, type Data } from '../lib/types'
-import { applyChanges, CloudBackend, LocalBackend, type Backend, type Change, type SyncStatus } from './backend'
+import { applyChanges, LocalBackend, type Backend, type Change, type SyncStatus } from './backend'
 import { usePrefs } from './prefs'
+import { createBackend } from './providers'
 import { seed } from './seed'
 
 interface Store {
@@ -40,8 +41,9 @@ let run = 0
 export const boot = async () => {
   stop?.()
   const id = ++run
-  const { session, apiUrl } = usePrefs.getState()
-  const backend: Backend = session ? new CloudBackend(apiUrl, session.token, session.user.id) : new LocalBackend()
+  const { session, provider } = usePrefs.getState()
+  const backend: Backend = await createBackend(provider, session)
+  if (id !== run) return
   useStore.setState({ backend, ready: false, status: session ? 'syncing' : 'local' })
   const data = await backend.load()
   if (id !== run) return // a newer boot superseded this one

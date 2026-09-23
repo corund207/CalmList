@@ -1,26 +1,9 @@
 import type { Data } from '../lib/types'
 import { importData } from './actions'
 import { LocalBackend } from './backend'
-import { usePrefs, type Session } from './prefs'
+import { usePrefs } from './prefs'
+import { signIn, signOutOf, type Credentials, type ProviderConfig } from './providers'
 import { boot, useStore } from './store'
-
-export const apiBase = (url: string) => url.trim().replace(/\/+$/, '')
-
-async function post<T>(api: string, path: string, body?: unknown, token?: string): Promise<T> {
-  let res: Response
-  try {
-    res = await fetch(`${api}${path}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...(token && { authorization: `Bearer ${token}` }) },
-      body: body ? JSON.stringify(body) : undefined,
-    })
-  } catch {
-    throw new Error(`Can't reach ${api || 'the server'}. Check the address and that the server allows this site (CORS_ORIGIN).`)
-  }
-  const json = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(json.error ?? `Server responded ${res.status}`)
-  return json as T
-}
 
 /** Local data lifted into an account: its Inbox merges into the account's Inbox. */
 const mergeLocal = (local: Data) => {
@@ -35,22 +18,23 @@ const mergeLocal = (local: Data) => {
   importData(local)
 }
 
-export async function authenticate(mode: 'login' | 'signup', apiUrl: string, fields: { email: string; password: string; name?: string }, bringLocal: boolean) {
-  const api = apiBase(apiUrl)
-  const session = await post<Session>(api, `/api/auth/${mode}`, fields)
+export async function authenticate(provider: ProviderConfig, mode: 'login' | 'signup', creds: Credentials, bringLocal: boolean) {
+  const session = await signIn(provider, mode, creds)
   const local = bringLocal ? await new LocalBackend().load() : null
-  usePrefs.getState().set({ session, apiUrl: api })
+  usePrefs.getState().set({ session, provider })
   await boot()
   if (local && Object.keys(local.tasks).length) mergeLocal(local)
 }
 
 export async function signOut() {
-  const { session, apiUrl } = usePrefs.getState()
-  if (session) post(apiUrl, '/api/auth/logout', undefined, session.token).catch(() => {})
-  if (session) localStorage.removeItem(`calmlist:cloud:${session.user.id}`)
-  usePrefs.getState().set({ session: null })
+  const { session, provider } = usePrefs.getState()
+  if (session) {
+    await signOutOf(provider, session)
+    localStorage.removeItem(`calmlist:cloud:${provider.kind}:${session.user.id}`)
+  }
+  usePrefs.getState().set({ session: null, provider: { kind: 'local' } })
   await boot()
 }
 
-// A revoked or expired token signs the device out rather than failing silently.
+// A revoked or expired session signs the device out rather than failing silently.
 if (typeof window !== 'undefined') window.addEventListener('calmlist:unauthorized', () => void signOut())
