@@ -34,14 +34,17 @@ export const useStore = create<Store>()((set, get) => ({
 export const commit = (changes: Change[]) => useStore.getState().commit(changes)
 
 let stop: (() => void) | undefined
+let run = 0
 
 /** Picks the backend from the saved session, loads data and starts syncing. */
 export const boot = async () => {
   stop?.()
+  const id = ++run
   const { session, apiUrl } = usePrefs.getState()
   const backend: Backend = session ? new CloudBackend(apiUrl, session.token, session.user.id) : new LocalBackend()
   useStore.setState({ backend, ready: false, status: session ? 'syncing' : 'local' })
   const data = await backend.load()
+  if (id !== run) return // a newer boot superseded this one
   useStore.setState({ data, ready: true })
   if (!session) seed()
   stop = backend.start?.(

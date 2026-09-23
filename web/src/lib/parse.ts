@@ -173,11 +173,9 @@ export const parseDate = (text: string, now = new Date()): DateMatch | null => {
     date = h * 60 + m <= now.getHours() * 60 + now.getMinutes() ? addDays(now, 1) : startOfDay(now)
   }
 
-  const spans = ([span, time].filter(Boolean) as Span[]).sort((a, b) => a.start - b.start)
-  // Merge "tomorrow at 5pm" into one span; a far-off time keeps its own.
-  const merged = spans.length === 2 && !/\S/.test(text.slice(spans[0].end, spans[1].start)) ? [{ start: spans[0].start, end: spans[1].end }] : spans
+  const spans = ([span, time].filter(Boolean) as Span[]).map(({ start, end }) => ({ start, end })).sort((a, b) => a.start - b.start)
   const due: Due = { date: toISO(date), ...(time && { time: time.time }), ...(recurrence && { recurrence }) }
-  return { spans: merged.map(({ start, end }) => ({ start, end })), due }
+  return { spans, due }
 }
 
 /* ─── Quick add ────────────────────────────────────────────────────────────── */
@@ -238,7 +236,10 @@ export const parseQuickAdd = (input: string, ctx: QuickAddContext): Parsed => {
   const date = parseDate(masked, ctx.now)
   if (date) {
     out.due = date.due
-    for (const { start, end } of date.spans) tokens.push({ type: 'date', start, end, value: input.slice(start, end) })
+    // "tomorrow at 5pm" reads as one token; a time elsewhere in the title stays separate.
+    const [a, b] = date.spans
+    const spans = b && !/\S/.test(input.slice(a.end, b.start)) ? [{ start: a.start, end: b.end }] : date.spans
+    for (const { start, end } of spans) tokens.push({ type: 'date', start, end, value: input.slice(start, end) })
   }
 
   tokens.sort((a, b) => a.start - b.start)
