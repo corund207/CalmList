@@ -241,21 +241,21 @@ Every record (task, project, section, label, filter, comment, completion event) 
 
 The UI follows the [Jonah Chang design system](https://claude.ai/artifact/FcShiF9BeJoJ54daksaej8): pure black ground, graphite surfaces, one blue for action, pill buttons, hairline lists and the SF system stack. Priority is shown by ring weight rather than extra hues. Other themes swap the palette through the same tokens.
 
+## Deployment status
+
+| Piece | Where | State |
+| --- | --- | --- |
+| Website and app | [corund207.github.io/CalmList](https://corund207.github.io/CalmList/) | Deploys on every push to `main` |
+| Supabase project | `calmlist` in the PersonalProgects org, us-east-2 (`ddvtufcbrvzjislojlqp`) | Schema applied, row-level security and realtime on |
+| Hosted app → Supabase | Actions variables `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Set: the Sync tab comes pre-filled |
+
 ## What you still need to do
 
-GitHub Pages is live and redeploys on every push to `main`. Everything works on-device out of the box; these steps turn on cross-device sync.
+1. **Create your account.** Open the [app](https://corund207.github.io/CalmList/app/) → **Settings → Sync → Supabase** → *Create account*. New accounts get a confirmation email; after clicking it, come back and sign in.
+2. **Optional: skip email confirmation.** Supabase's built-in email sender is rate-limited, so for a personal instance you may prefer turning off *Confirm email* under Authentication → Providers → Email in the [dashboard](https://supabase.com/dashboard/project/ddvtufcbrvzjislojlqp/auth/providers).
+3. **Optional: automatic migrations.** Add the Actions variable `SUPABASE_PROJECT_REF=ddvtufcbrvzjislojlqp` and the secrets `SUPABASE_ACCESS_TOKEN` (from [account tokens](https://supabase.com/dashboard/account/tokens)) and `SUPABASE_DB_PASSWORD` (in your local, gitignored `supabase/.env.local`). CI will then push new migrations on every merge to `main`.
 
-**Supabase Cloud (recommended)**
-
-1. Run `npx supabase login` once, then create a project at [supabase.com](https://supabase.com/dashboard/new) (or with `npx supabase projects create calmlist`).
-2. Apply the schema: `npm run supabase:link -- --project-ref <ref>`, then `npm run supabase:push`. Or paste the SQL into the dashboard's SQL editor.
-3. In Supabase → Authentication → URL Configuration, add `https://corund207.github.io/CalmList/app/` to Redirect URLs.
-4. In the GitHub repo, add the Actions variables `SUPABASE_URL` and `SUPABASE_ANON_KEY` so the hosted app comes pre-configured.
-5. Open the app → **Settings → Sync → Supabase** → create your account.
-
-**Or self-hosted Supabase:** install Docker, run `npm run supabase:selfhost -- --url https://your-domain`, put HTTPS in front of port 8000, and paste the printed URL and anon key into the app.
-
-**Or the CalmList server:** deploy the Docker image with a volume for `/data`, set `CORS_ORIGIN=https://corund207.github.io`, and sign in under **Settings → Sync → CalmList server**.
+**Self-hosting instead:** install Docker, run `npm run supabase:selfhost -- --url https://your-domain`, put HTTPS in front of port 8000, and paste the printed URL and anon key into the app. Or deploy the CalmList server image with a volume for `/data`, set `CORS_ORIGIN=https://corund207.github.io`, and choose **Settings → Sync → CalmList server**.
 
 ## License
 
