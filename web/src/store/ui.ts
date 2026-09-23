@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import type { TaskInput } from './actions'
 import type { Change } from './backend'
+import type { Draft } from './quickadd'
 import { commit } from './store'
 
 export interface Toast {
@@ -10,13 +10,14 @@ export interface Toast {
 }
 
 type Dialog =
-  | { type: 'quickAdd'; defaults?: Partial<TaskInput> }
+  | { type: 'quickAdd'; defaults?: Partial<Draft> }
   | { type: 'search' }
   | { type: 'shortcuts' }
   | { type: 'settings' }
   | { type: 'project'; id?: string }
   | { type: 'label'; id?: string }
   | { type: 'filter'; id?: string }
+  | { type: 'confirm'; title: string; body: string; action: string; onConfirm(): void }
   | null
 
 interface UI {

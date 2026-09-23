@@ -1,5 +1,5 @@
 import { CalendarDays, CalendarRange, CircleCheck, Inbox, LayoutGrid, PanelLeftClose, Plus, Search, Settings } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useData } from '../hooks'
 import { today } from '../lib/dates'
@@ -45,6 +45,8 @@ export function Sidebar() {
     ...Object.values(data.labels).filter((l) => l.favorite).sort(byOrder).map((l) => ({ to: `/label/${l.id}`, name: l.name, id: l.id, sigil: '@' })),
     ...Object.values(data.filters).filter((f) => f.favorite).sort(byOrder).map((f) => ({ to: `/filter/${f.id}`, name: f.name, id: f.id, sigil: '≡' })),
   ]
+  const archived = Object.values(data.projects).filter((p) => p.archived).sort(byOrder)
+  const [showArchived, setShowArchived] = useState(false)
   const closeOnMobile = () => window.innerWidth <= 760 && set({ sidebar: false })
 
   return (
@@ -103,6 +105,17 @@ export function Sidebar() {
                   )
                 }}
               </SortableList>
+              {archived.length > 0 && (
+                <>
+                  <button className="nav-item is-quiet" onClick={() => setShowArchived((v) => !v)} aria-expanded={showArchived}>
+                    <span className="nav-hash">·</span>
+                    <span className="name">{showArchived ? 'Hide' : 'Show'} archived ({archived.length})</span>
+                  </button>
+                  {showArchived && archived.map((p) => (
+                    <NavLink key={p.id} className="nav-item is-quiet" to={`/project/${p.id}`}><span className="nav-hash">#</span><span className="name">{p.name}</span></NavLink>
+                  ))}
+                </>
+              )}
             </div>
           </nav>
 

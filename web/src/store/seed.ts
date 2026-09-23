@@ -26,6 +26,6 @@ export const seed = () => {
   addTask({ content: 'Water the plants (repeats every other day)', projectId: tour.id, sectionId: power.id,
     due: { ...d(0), recurrence: { every: 2, unit: 'day' } }, priority: 3 })
   addTask({ content: 'Press / to search, ? for every shortcut', projectId: tour.id, sectionId: power.id, labels: [quick.id], due: d(2) })
-  addTask({ content: 'Switch this project to a board from its ••• menu', projectId: tour.id, sectionId: power.id, due: d(3) })
+  addTask({ content: 'Switch this project to a board with the grid button up top', projectId: tour.id, sectionId: power.id, due: d(3) })
   addTask({ content: 'Sign in from Settings to sync across devices', projectId: tour.id, sectionId: power.id, priority: 2, due: d(5) })
 }
