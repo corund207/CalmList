@@ -8,3 +8,4 @@ dist/
 *.log
 _site/
 supabase-selfhost/
+.vercel/

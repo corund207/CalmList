@@ -6,6 +6,8 @@ import { TaskDetailHost } from './components/TaskDetail'
 import { useShortcuts } from './components/Shortcuts'
 import { Sidebar } from './components/Sidebar'
 import { Toasts } from './components/Toasts'
+import { handleAuthRedirect } from './store/account'
+import { startCalendarAutoSync } from './store/gcal'
 import { useUI } from './store/ui'
 import { usePrefs } from './store/prefs'
 import { boot, useStore } from './store/store'
@@ -50,7 +52,18 @@ function TaskLink() {
 export function App() {
   const theme = useTheme()
   const motion = usePrefs((s) => s.motion)
-  useEffect(() => void boot(), [])
+  useEffect(() => startCalendarAutoSync(), [])
+  useEffect(() => {
+    // An email link (confirmation or password reset) signs in before the first load.
+    handleAuthRedirect()
+      .catch(() => null)
+      .then(async (link) => {
+        await boot()
+        if (link === 'recovery') useUI.getState().open({ type: 'newPassword' })
+        if (link === 'confirm') useUI.getState().toast('Email confirmed. Syncing is on.')
+        if (link === 'expired') useUI.getState().toast('That link has expired or was already used. Sign in, or ask for a new one.')
+      })
+  }, [])
 
   return (
     <HashRouter>

@@ -1,6 +1,7 @@
-import { Check, Cloud, Copy, Database, ExternalLink, HardDrive, LogOut, Server } from 'lucide-react'
+import { Check, Cloud, Copy, Database, ExternalLink, HardDrive, LogOut, Server, Trash2 } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import setupSql from '../../../supabase/migrations/20260923000000_calmlist.sql?raw'
+import { deleteAccount, requestPasswordReset, updateName, updatePassword } from '../store/account'
 import { authenticate, signOut } from '../store/auth'
 import { usePrefs } from '../store/prefs'
 import { PRESETS, PROVIDER_NAMES, testConnection, type ProviderConfig } from '../store/providers'
@@ -60,6 +61,7 @@ export function SyncSettings() {
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [bringLocal, setBringLocal] = useState<boolean | null>(null)
+  const [agreed, setAgreed] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -89,6 +91,7 @@ export function SyncSettings() {
           <span className="micro">{saved.kind === 'local' ? '' : saved.url || location.origin} · {status}</span>
         </div>
         <button className="btn btn-secondary" onClick={() => signOut().then(() => toast('Signed out. Back to this device only.'))}><LogOut size={15} /> Sign Out</button>
+        <AccountDetails />
       </div>
     )
 
@@ -161,6 +164,35 @@ export function SyncSettings() {
             <span className="micro">Password</span>
             <input className="field" type="password" required minLength={mode === 'signup' ? 8 : undefined} value={password} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} onChange={(e) => setPassword(e.target.value)} />
           </label>
+          {mode === 'login' && kind === 'supabase' && (
+            <div className="actions">
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={busy}
+                onClick={() => run(async () => {
+                  if (!email) throw new Error('Enter your email above first.')
+                  await requestPasswordReset(email)
+                  return `If ${email} has an account, a reset link is on its way.`
+                })}
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+          {mode === 'signup' && (
+            <label className="toggle">
+              <input type="checkbox" required checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+              <span className="toggle-track" aria-hidden="true" />
+              <span>
+                I'm 16 or older
+                {PRESETS.policyUrl && (
+                  <> and agree to the <a className="link" href={`${PRESETS.policyUrl}#terms`} target="_blank" rel="noopener">Terms</a> and{' '}
+                  <a className="link" href={`${PRESETS.policyUrl}#privacy`} target="_blank" rel="noopener">Privacy Policy</a></>
+                )}
+              </span>
+            </label>
+          )}
           <label className="toggle">
             <input type="checkbox" checked={bringLocal ?? mode === 'signup'} onChange={(e) => setBringLocal(e.target.checked)} />
             <span className="toggle-track" aria-hidden="true" />
@@ -172,9 +204,81 @@ export function SyncSettings() {
       {message && <p className="form-hint" data-error={!message.ok || undefined} data-ok={message.ok || undefined}>{message.text}</p>}
       {kind !== 'local' && (
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Connecting…' : mode === 'signup' ? 'Create Account' : 'Sign In'}</button>
+          <button type="submit" className="btn btn-primary" disabled={busy || (mode === 'signup' && !agreed)}>{busy ? 'Connecting…' : mode === 'signup' ? 'Create Account' : 'Sign In'}</button>
         </div>
       )}
     </form>
+  )
+}
+
+/** Name, password and deletion for the signed-in account. */
+function AccountDetails() {
+  const { session, provider } = usePrefs()
+  const { toast, open } = useUI()
+  const [name, setName] = useState(session?.user.name ?? '')
+  const [password, setPassword] = useState('')
+  const [keepCopy, setKeepCopy] = useState(true)
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  if (!session) return null
+  const managed = provider.kind === 'supabase'
+
+  const run = async (fn: () => Promise<string>) => {
+    setBusy(true)
+    setMessage(null)
+    try {
+      setMessage({ ok: true, text: await fn() })
+    } catch (err) {
+      setMessage({ ok: false, text: (err as Error).message })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const confirmDelete = () =>
+    open({
+      type: 'confirm',
+      title: 'Delete your account?',
+      body: `This permanently deletes ${session.user.email} and every task, project and label synced with it. It can't be undone.${keepCopy ? ' A copy stays on this device.' : ''}`,
+      action: 'Delete Account',
+      onConfirm: () =>
+        void deleteAccount(keepCopy)
+          .then(() => toast(keepCopy ? 'Account deleted. Your tasks stay on this device.' : 'Account deleted.'))
+          .catch((err: Error) => toast(`Couldn't delete the account: ${err.message}`)),
+    })
+
+  return (
+    <>
+      {managed && (
+        <>
+          <form className="form-field" onSubmit={(e) => (e.preventDefault(), void run(() => updateName(name.trim()).then(() => 'Name saved.')))}>
+            <span className="micro">Name</span>
+            <div className="actions">
+              <input className="field" value={name} autoComplete="name" required onChange={(e) => setName(e.target.value)} />
+              <button className="btn btn-secondary btn-sm" disabled={busy || !name.trim() || name.trim() === session.user.name}>Save</button>
+            </div>
+          </form>
+          <form
+            className="form-field"
+            onSubmit={(e) => (e.preventDefault(), void run(() => updatePassword(password).then(() => (setPassword(''), 'Password changed.'))))}
+          >
+            <span className="micro">New password</span>
+            <div className="actions">
+              <input className="field" type="password" minLength={8} required value={password} autoComplete="new-password" onChange={(e) => setPassword(e.target.value)} />
+              <button className="btn btn-secondary btn-sm" disabled={busy || password.length < 8}>Change</button>
+            </div>
+          </form>
+        </>
+      )}
+      {message && <p className="form-hint" data-error={!message.ok || undefined} data-ok={message.ok || undefined}>{message.text}</p>}
+      <label className="toggle">
+        <input type="checkbox" checked={keepCopy} onChange={(e) => setKeepCopy(e.target.checked)} />
+        <span className="toggle-track" aria-hidden="true" />
+        Keep a copy of my tasks on this device after deleting
+      </label>
+      <div className="actions">
+        <button className="btn btn-danger" disabled={busy} onClick={confirmDelete}><Trash2 size={15} /> Delete Account</button>
+      </div>
+    </>
   )
 }

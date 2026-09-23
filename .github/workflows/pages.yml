@@ -39,14 +39,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      # The landing page sits at the root; the app (local-only mode) at /app/.
-      - run: npm run build --workspace web -- --outDir ../_site/app --emptyOutDir
+      # The landing page at the root, the app (local-only unless Supabase is set) at /app/, license notices.
+      - run: npm run build:site
         env:
-          BASE: ./
           # Optional: point the hosted app at your Supabase project (Settings → Secrets and variables → Actions → Variables).
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
-      - run: cp -r site/* _site/
+          # Optional: the MCP endpoint of your Vercel deployment, e.g. https://calmlist.vercel.app/api/mcp
+          VITE_MCP_URL: ${{ vars.MCP_URL }}
+          # Optional: Google OAuth web client id for the Google Calendar connector.
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

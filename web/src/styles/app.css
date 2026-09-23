@@ -198,6 +198,15 @@ code { font-family: var(--font-mono); font-size: 0.92em; text-transform: none; }
 .integration header .provider-icon { margin: 0; }
 .integration strong { flex: 1; color: var(--foreground-bright); font-size: 15px; font-weight: 560; }
 .integration p { color: var(--foreground-soft); font-size: 14px; }
+.integration p strong { flex: none; font-size: inherit; }
+.copy-field { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.copy-field .field { flex: 1; min-width: 0; }
+.token-reveal { display: grid; gap: 8px; padding: 14px; border-radius: 12px; border: 1px solid var(--line-strong); }
+.token-list { display: grid; margin: 4px 0 0; padding: 0; list-style: none; }
+.token-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); }
+.token-list li > span { display: grid; gap: 1px; min-width: 0; }
+.token-list .micro { color: var(--muted); }
+.legal-links { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; }
 .integration-status { color: var(--accent); }
 .provider-grid.is-ai { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .provider-grid.is-ai .provider { padding: 12px 14px; }
@@ -211,3 +220,4 @@ code { font-family: var(--font-mono); font-size: 0.92em; text-transform: none; }
 .progress-bar span { display: block; height: 100%; background: var(--accent); }
 select.field { appearance: auto; background: transparent; }
 select.field option { background: var(--surface); }
+.integration .segmented { max-width: 100%; overflow-x: auto; }

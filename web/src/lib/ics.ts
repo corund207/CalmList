@@ -7,7 +7,7 @@ const escape = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').repl
 /** RFC 5545 lines are folded at 75 characters with a leading space on continuations. */
 const fold = (line: string) => line.match(/.{1,74}/gu)?.join('\r\n ') ?? line
 
-const rrule = (r: Recurrence) => {
+export const rrule = (r: Recurrence) => {
   const freq = { day: 'DAILY', week: 'WEEKLY', month: 'MONTHLY', year: 'YEARLY' }[r.unit]
   const byDay = r.weekdays?.length ? `;BYDAY=${[...r.weekdays].sort().map((d) => DAYS[d]).join(',')}` : ''
   return `RRULE:FREQ=${freq};INTERVAL=${r.every}${byDay}`

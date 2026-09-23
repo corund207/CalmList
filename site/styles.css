@@ -138,3 +138,16 @@ code { font-family: var(--font-mono); font-size: 0.88em; color: var(--foreground
 .theme-shots .media { border-radius: 18px; }
 .theme-shots figcaption { padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-soft); }
 @media (max-width: 800px) { .theme-shots { grid-template-columns: 1fr; } }
+
+/* Legal */
+.legal { width: min(100% - 2 * var(--gutter), 760px); margin: 0 auto; padding: clamp(60px, 8vw, 110px) 0 120px; }
+.legal h1 { color: var(--foreground-bright); font-size: clamp(40px, 5vw, 64px); line-height: 1.05; letter-spacing: -0.02em; }
+.legal h2 { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--foreground-bright); font-size: 32px; scroll-margin-top: 90px; }
+.legal h3 { margin-top: 36px; color: var(--foreground-bright); font-size: 19px; }
+.legal p, .legal li { color: var(--foreground-soft); }
+.legal p + p, .legal h3 + p, .legal ul { margin-top: 12px; }
+.legal ul { padding-left: 20px; }
+.legal li + li { margin-top: 6px; }
+.legal a { color: var(--accent); }
+.legal a:hover { text-decoration: underline; text-underline-offset: 5px; }
+.legal .meta { margin-top: 16px; color: var(--muted); }

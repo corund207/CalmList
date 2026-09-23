@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { emptyData, type Data } from '../lib/types'
 import { importData } from '../store/actions'
 import { usePrefs } from '../store/prefs'
+import { PRESETS, PROVIDER_NAMES } from '../store/providers'
 import { ThemePicker } from '../themes/ThemePicker'
 import { AiSettings } from './AiSettings'
 import { Integrations } from './Integrations'
@@ -55,8 +56,22 @@ function DataPane() {
 
   const counts = `${Object.keys(data.tasks).length} tasks · ${Object.keys(data.projects).length} projects · ${Object.keys(data.labels).length} labels`
 
+  const provider = usePrefs((s) => s.provider)
+  const policy = PRESETS.policyUrl && new URL(PRESETS.policyUrl, location.href)
+
   return (
     <div className="settings-pane">
+      <p className="form-body">
+        <strong>No analytics, ads or tracking.</strong> Your tasks live {provider.kind === 'local' ? 'only in this browser' : `in this browser and on your ${PROVIDER_NAMES[provider.kind]} account`}.
+        Nothing else leaves this device unless you turn on a cloud AI provider, an AI assistant connection or Google Calendar.
+      </p>
+      {policy && (
+        <nav className="legal-links" aria-label="Legal">
+          <a className="link" href={`${policy.href.split('#')[0]}#privacy`} target="_blank" rel="noopener">Privacy Policy</a>
+          <a className="link" href={`${policy.href.split('#')[0]}#terms`} target="_blank" rel="noopener">Terms</a>
+          <a className="link" href={new URL('licenses.txt', policy).href} target="_blank" rel="noopener">Open-source licenses</a>
+        </nav>
+      )}
       <p className="form-body">{counts}</p>
       <div className="actions">
         <button className="btn btn-secondary" onClick={exportJson}><Download size={15} /> Export JSON</button>
@@ -88,7 +103,7 @@ function DataPane() {
 export function SettingsDialog() {
   const close = useUI((s) => s.close)
   const [tab, setTab] = useState<Tab>('appearance')
-  const tabs: [Tab, string][] = [['appearance', 'Appearance'], ['general', 'General'], ['ai', 'AI'], ['account', 'Sync'], ['integrations', 'Integrations'], ['data', 'Data']]
+  const tabs: [Tab, string][] = [['appearance', 'Appearance'], ['general', 'General'], ['ai', 'AI'], ['account', 'Account & Sync'], ['integrations', 'Integrations'], ['data', 'Data & Privacy']]
   return (
     <Modal onClose={close} label="Settings" size="lg">
       <div className="form">

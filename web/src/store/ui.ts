@@ -18,6 +18,7 @@ type Dialog =
   | { type: 'project'; id?: string }
   | { type: 'label'; id?: string }
   | { type: 'filter'; id?: string }
+  | { type: 'newPassword' }
   | { type: 'confirm'; title: string; body: string; action: string; onConfirm(): void }
   | null
 

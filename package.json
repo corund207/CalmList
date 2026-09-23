@@ -11,9 +11,10 @@
     "dev": "npm run dev --workspace web",
     "dev:server": "npm run dev --workspace server",
     "build": "npm run build --workspace web && npm run build --workspace server",
+    "build:site": "node scripts/build-site.mjs",
     "start": "npm run start --workspace server",
     "test": "npm test --workspace web && npm test --workspace server && npm run test:db",
-    "typecheck": "npm run typecheck --workspace web && npm run typecheck --workspace server",
+    "typecheck": "npm run typecheck --workspace web && npm run typecheck --workspace server && tsc -p functions",
     "supabase:selfhost": "node scripts/supabase-selfhost.mjs",
     "supabase:link": "npx supabase link",
     "supabase:push": "npx supabase db push",
@@ -24,6 +25,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8"
+    "@electric-sql/pglite": "^0.5.8",
+    "rolldown": "^1.2.10"
   }
 }

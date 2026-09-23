@@ -21,6 +21,12 @@ export const PRESETS = {
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? '',
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '',
   calmlistUrl: import.meta.env.VITE_API_URL ?? '',
+  /** Where this deployment's Terms and Privacy Policy live; sign-up links to it when set. */
+  policyUrl: import.meta.env.VITE_POLICY_URL ?? '',
+  /** The MCP endpoint for AI assistants (a Vercel deployment of this repo); relative paths resolve against this site. */
+  mcpUrl: import.meta.env.VITE_MCP_URL ? new URL(import.meta.env.VITE_MCP_URL, location.origin).href : '',
+  /** An OAuth web client id from Google Cloud, for the Google Calendar connector. */
+  googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
 }
 
 export const SUPABASE_TABLE = 'calmlist_items'
@@ -59,7 +65,10 @@ export const supabaseClient = (url: string, anonKey: string) => {
   const key = `${trimUrl(url)}|${anonKey}`
   if (!clients.has(key))
     clients.set(key, import('@supabase/supabase-js').then(({ createClient }) =>
-      createClient(trimUrl(url), anonKey, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'calmlist:supabase-auth' } })))
+      createClient(trimUrl(url), anonKey, {
+        // PKCE puts ?code= in the query string, which leaves the hash router's #/path alone.
+        auth: { persistSession: true, autoRefreshToken: true, storageKey: 'calmlist:supabase-auth', flowType: 'pkce', detectSessionInUrl: false },
+      })))
   return clients.get(key)!
 }
 
@@ -113,13 +122,27 @@ export interface Credentials {
   name?: string
 }
 
+/** Bumped when the Terms or Privacy Policy change materially; stored with each sign-up. */
+export const POLICY_VERSION = '2026-09-23'
+
+/** This app's address without any route, for email links. */
+export const appUrl = () => `${location.origin}${location.pathname}`
+
 export async function signIn(provider: ProviderConfig, mode: 'login' | 'signup', creds: Credentials): Promise<Session> {
   if (provider.kind === 'calmlist') return call<Session>(provider.url, `/api/auth/${mode}`, { method: 'POST', body: JSON.stringify(creds) })
   if (provider.kind !== 'supabase') throw new Error('Pick a sync service first.')
 
   const client = await supabaseClient(provider.url, provider.anonKey)
   const result = mode === 'signup'
-    ? await client.auth.signUp({ email: creds.email, password: creds.password, options: { data: { name: creds.name } } })
+    ? await client.auth.signUp({
+        email: creds.email,
+        password: creds.password,
+        options: {
+          emailRedirectTo: `${appUrl()}?auth=confirm`,
+          // A record of what the person agreed to, kept with their account (GDPR art. 7(1)).
+          data: { name: creds.name, terms_version: POLICY_VERSION, terms_accepted_at: new Date().toISOString(), age_confirmed: true },
+        },
+      })
     : await client.auth.signInWithPassword({ email: creds.email, password: creds.password })
   if (result.error) throw new Error(result.error.message)
   const { session, user } = result.data

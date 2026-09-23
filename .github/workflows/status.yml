@@ -1,0 +1,21 @@
+name: Status check
+
+# Records uptime every 30 minutes for the numbers in the README. Vercel Cron covers once a day on the
+# free plan; this fills the gaps. Needs the Actions variable STATUS_URL (https://<your-app>/api/status-check)
+# and the secret CRON_SECRET (the same value as in Vercel).
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    if: vars.STATUS_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl --fail-with-body -sS -H "Authorization: Bearer $CRON_SECRET" "$STATUS_URL"
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          STATUS_URL: ${{ vars.STATUS_URL }}

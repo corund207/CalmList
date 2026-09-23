@@ -1,5 +1,5 @@
 import { useUI } from '../store/ui'
-import { ConfirmDialog, FilterDialog, LabelDialog, ProjectDialog } from './EntityDialogs'
+import { ConfirmDialog, FilterDialog, LabelDialog, NewPasswordDialog, ProjectDialog } from './EntityDialogs'
 import { QuickAdd } from './QuickAdd'
 import { RambleDialog } from './Ramble'
 import { SearchDialog, ShortcutsDialog } from './Search'
@@ -26,6 +26,8 @@ export function Dialogs() {
       return <ShortcutsDialog />
     case 'settings':
       return <SettingsDialog />
+    case 'newPassword':
+      return <NewPasswordDialog />
     case 'confirm':
       return <ConfirmDialog {...dialog} />
     default:

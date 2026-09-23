@@ -95,3 +95,33 @@ test('deleting an account erases everything it owned', async () => {
   assert.equal(await count('public.calmlist_api_tokens'), 0)
   assert.equal(await count('public.calmlist_items'), 1)
 })
+
+test('an agent token reads and writes only its owner’s data', async () => {
+  const { db, as } = await database()
+  const token = 'cl_' + 'k'.repeat(40)
+  const hash = (await db.query(`select encode(sha256(convert_to($1, 'UTF8')), 'hex') h`, [token])).rows[0].h
+  await as(A, `insert into public.calmlist_api_tokens (name, token_hash, hint, timezone) values ('Claude', '${hash}', 'kkkk', 'Europe/Berlin')`)
+  await as(A, `insert into public.calmlist_items (kind, id, data) values ('tasks', 'a1', '{"id":"a1","content":"A task"}')`)
+  await as(B, `insert into public.calmlist_items (kind, id, data) values ('tasks', 'b1', '{"id":"b1","content":"B secret"}')`)
+
+  const agent = async (sql, params) => {
+    await db.exec('set role anon')
+    try {
+      return (await db.query(sql, params)).rows[0]
+    } finally {
+      await db.exec('reset role')
+    }
+  }
+  const read = (await agent(`select public.calmlist_agent_read($1) r`, [token])).r
+  assert.equal(read.timezone, 'Europe/Berlin')
+  assert.deepEqual(read.items.map((i) => i.data.content), ['A task'])
+
+  // Writing an id that B also uses lands in A's account and leaves B's row alone.
+  await agent(`select public.calmlist_agent_write($1, $2) n`, [token, JSON.stringify([{ kind: 'tasks', id: 'b1', data: { id: 'b1', content: 'from agent' } }, { kind: 'users', id: 'x', data: {} }])])
+  const rows = (await db.query(`select user_id, kind, id, data->>'content' c from public.calmlist_items order by user_id, id`)).rows
+  assert.deepEqual(rows.map((r) => [r.user_id, r.id, r.c]), [[A, 'a1', 'A task'], [A, 'b1', 'from agent'], [B, 'b1', 'B secret']])
+
+  await assert.rejects(agent(`select public.calmlist_agent_read($1) r`, ['cl_' + 'x'.repeat(40)]), /invalid token/)
+  await assert.rejects(agent(`select public.calmlist_token_user($1)`, [token]), /permission denied/)
+  assert.ok((await db.query(`select last_used_at from public.calmlist_api_tokens`)).rows[0].last_used_at)
+})

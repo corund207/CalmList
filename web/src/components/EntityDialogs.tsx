@@ -5,6 +5,7 @@ import { aiContext, workspace } from '../ai/context'
 import { filterAssist } from '../ai/features'
 import { useData } from '../hooks'
 import { runFilter, validateFilter } from '../lib/filter'
+import { updatePassword } from '../store/account'
 import { addFilter, addLabel, addProject, updateFilter, updateLabel, updateProject } from '../store/actions'
 import { usePrefs } from '../store/prefs'
 import { useUI } from '../store/ui'
@@ -172,6 +173,29 @@ export function ConfirmDialog({ title, body, action, onConfirm }: { title: strin
   return (
     <Form title={title} submit={action} onSubmit={() => (onConfirm(), close())}>
       <p className="form-body">{body}</p>
+    </Form>
+  )
+}
+
+/** Shown after a password-reset link signs the person in. */
+export function NewPasswordDialog() {
+  const { close, toast } = useUI()
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const save = () => {
+    setBusy(true)
+    updatePassword(password)
+      .then(() => (close(), toast('Password changed. You are signed in.')))
+      .catch((err: Error) => (setError(err.message), setBusy(false)))
+  }
+  return (
+    <Form title="Choose a new password" submit={busy ? 'Saving…' : 'Save Password'} disabled={busy || password.length < 8} onSubmit={save}>
+      <label className="form-field">
+        <span className="micro">New password</span>
+        <input className="field" type="password" autoFocus minLength={8} value={password} autoComplete="new-password" onChange={(e) => setPassword(e.target.value)} />
+        <span className="form-hint" data-error={error ? true : undefined}>{error ?? 'At least 8 characters.'}</span>
+      </label>
     </Form>
   )
 }
