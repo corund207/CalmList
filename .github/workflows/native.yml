@@ -41,16 +41,27 @@ jobs:
         with:
           workspaces: src-tauri
       - run: npm ci
-      - uses: tauri-apps/tauri-action@v0
+      # Optional macOS signing and notarization (needs a paid Apple Developer account). Only set
+      # when present: an empty APPLE_CERTIFICATE makes Tauri try to sign with nothing.
+      - name: Apple signing credentials
+        if: matrix.name == 'macos'
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Optional macOS signing and notarization (needs a paid Apple Developer account).
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+            if [ -n "${!v}" ]; then
+              { echo "$v<<__EOF__"; echo "${!v}"; echo "__EOF__"; } >> "$GITHUB_ENV"
+            fi
+          done
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: CalmList ${{ github.ref_name }}
@@ -88,20 +99,14 @@ jobs:
           plist=$(ls src-tauri/gen/apple/*_iOS/Info.plist)
           /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'CalmList listens only while you use Ramble, to turn what you say into tasks.'" "$plist"
           /usr/libexec/PlistBuddy -c "Add :NSSpeechRecognitionUsageDescription string 'CalmList turns what you say in Ramble into text to create tasks.'" "$plist"
-      - name: Build the web app
-        run: node scripts/build-native.mjs
       # Without an Apple Developer account: an unsigned Simulator build, which proves the app compiles
       # and runs in Xcode's Simulator (drag the .app onto it).
       - name: Build for the iOS Simulator
         if: vars.APPLE_DEVELOPMENT_TEAM == ''
         run: |
-          cd src-tauri/gen/apple
-          xcodebuild -list
-          scheme=$(xcodebuild -list -json | python3 -c 'import json,sys; print([s for s in json.load(sys.stdin)["project"]["schemes"] if s.endswith("_iOS")][0])')
-          xcodebuild -scheme "$scheme" -configuration release -sdk iphonesimulator -arch arm64 \
-            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
-          mkdir -p ../../../ios-out
-          cp -R build/Build/Products/*-iphonesimulator/*.app ../../../ios-out/
+          npx tauri ios build --target aarch64-sim --ci
+          mkdir -p ios-out
+          find src-tauri/gen/apple/build -name '*.app' -maxdepth 6 -print -exec cp -R {} ios-out/ \;
       # With an Apple Developer account (vars.APPLE_DEVELOPMENT_TEAM and an App Store Connect API key):
       # a signed build for TestFlight / the App Store.
       - name: Signed build for TestFlight
