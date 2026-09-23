@@ -43,10 +43,29 @@ jobs:
       - run: npm run build --workspace web -- --outDir ../_site/app --emptyOutDir
         env:
           BASE: ./
+          # Optional: point the hosted app at your Supabase project (Settings → Secrets and variables → Actions → Variables).
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
       - run: cp -r site/* _site/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
+  # Applies supabase/migrations to your hosted project when SUPABASE_PROJECT_REF is set.
+  migrate:
+    needs: test
+    if: github.ref == 'refs/heads/main' && vars.SUPABASE_PROJECT_REF != ''
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
+      - run: supabase db push
 
   deploy:
     needs: build
