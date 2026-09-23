@@ -8,6 +8,7 @@ import { Toasts } from './components/Toasts'
 import { useTheme } from './hooks'
 import { boot, useStore } from './store/store'
 import { Inbox, ProjectView } from './views/ProjectView'
+import { FilterView, FiltersLabels, LabelView } from './views/FiltersLabels'
 import { Today } from './views/Today'
 import { Upcoming } from './views/Upcoming'
 
@@ -51,6 +52,9 @@ export function App() {
           <Route path="/today" element={<Today />} />
           <Route path="/upcoming" element={<Upcoming />} />
           <Route path="/project/:id" element={<ProjectView />} />
+          <Route path="/filters-labels" element={<FiltersLabels />} />
+          <Route path="/label/:id" element={<LabelView />} />
+          <Route path="/filter/:id" element={<FilterView />} />
           <Route path="/task/:id" element={<TaskLink />} />
           <Route path="*" element={<Navigate to="/today" replace />} />
         </Route>

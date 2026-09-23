@@ -82,3 +82,19 @@
   .sidebar[data-open="true"] + .scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, 0.5); }
 }
 .nav-item.is-quiet { width: 100%; color: var(--muted); font-size: 13px; text-align: left; }
+
+/* ─── Filters & Labels ───────────────────────────────────────────────────── */
+.fl-row { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+.fl-row:hover { background: var(--row-wash); }
+.fl-link { flex: 1; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 4px; color: var(--foreground); font-size: 15px; }
+.fl-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fl-link .micro { color: var(--muted); }
+.fl-link .nav-hash { color: var(--accent); }
+.fl-actions { display: flex; opacity: 0; }
+.fl-row:hover .fl-actions, .fl-actions:focus-within { opacity: 1; }
+.fl-actions [aria-pressed="true"] { color: var(--accent); }
+@media (hover: none) { .fl-actions { opacity: 1; } }
+.fl-empty { padding: 16px 4px; color: var(--muted); font-size: 14px; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 14px; }
+code { font-family: var(--font-mono); font-size: 0.92em; text-transform: none; }
+.group-head .icon-btn { width: 30px; height: 30px; align-self: center; }
