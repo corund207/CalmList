@@ -62,6 +62,8 @@ export interface Task extends Base {
   labels: ID[]
   completed: boolean
   completedAt: number | null
+  /** Set when an AI feature proposed the task (shown in the task view, per the EU AI Act's transparency duty). */
+  ai?: boolean
 }
 
 export interface Comment extends Base {

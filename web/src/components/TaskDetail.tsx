@@ -8,6 +8,7 @@ import { byOrder, children } from '../lib/select'
 import type { Task } from '../lib/types'
 import { addComment, deleteComment, duplicateTask, updateTask } from '../store/actions'
 import { complete, remove } from '../store/taskOps'
+import { Assist } from './Assist'
 import { Checkbox } from './Checkbox'
 import { Modal } from './Modal'
 import { DatePicker, LabelPicker, PriorityPicker, PRIORITY_NAMES, ProjectPicker } from './pickers'
@@ -115,6 +116,7 @@ function Detail({ task, onClose }: { task: Task; onClose(): void }) {
             <AutoText className="detail-content" value={task.content} label="Task name" singleLine onSave={(content) => updateTask(task.id, { content })} />
           </div>
           <AutoText className="detail-desc" value={task.description} label="Description" placeholder="Add notes" onSave={(description) => updateTask(task.id, { description })} />
+          <Assist task={task} />
 
           <section className="detail-section">
             <h3 className="label">Sub-tasks {subtasks.length + doneSubtasks.length > 0 && <span>{doneSubtasks.length}/{subtasks.length + doneSubtasks.length}</span>}</h3>
@@ -183,6 +185,7 @@ function Detail({ task, onClose }: { task: Task; onClose(): void }) {
               <span className="grow">{labelList.length ? labelList.map((l) => `@${l.name}`).join(' ') : 'No labels'}</span>
             </button>
           </Field>
+          {task.ai && <p className="side-note micro">Suggested by AI</p>}
           <p className="side-note micro">Created {new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
         </aside>
       </div>

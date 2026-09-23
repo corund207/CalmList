@@ -1,6 +1,7 @@
 import { useUI } from '../store/ui'
 import { ConfirmDialog, FilterDialog, LabelDialog, ProjectDialog } from './EntityDialogs'
 import { QuickAdd } from './QuickAdd'
+import { RambleDialog } from './Ramble'
 import { SearchDialog, ShortcutsDialog } from './Search'
 import { SettingsDialog } from './Settings'
 
@@ -17,6 +18,8 @@ export function Dialogs() {
       return <LabelDialog id={dialog.id} />
     case 'filter':
       return <FilterDialog id={dialog.id} />
+    case 'ramble':
+      return <RambleDialog />
     case 'search':
       return <SearchDialog />
     case 'shortcuts':

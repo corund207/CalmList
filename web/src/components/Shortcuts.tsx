@@ -6,6 +6,7 @@ import { useUI } from '../store/ui'
 
 export const SHORTCUTS: [string, string][] = [
   ['Q', 'Quick add a task'],
+  ['R', 'Ramble: speak or type a brain dump'],
   ['/', 'Search'],
   ['G then I', 'Go to Inbox'],
   ['G then T', 'Go to Today'],
@@ -38,6 +39,7 @@ export function useShortcuts() {
       }
       if (k === 'g') pendingG = Date.now()
       else if (k === 'q') ui.open({ type: 'quickAdd' })
+      else if (k === 'r') ui.open({ type: 'ramble' })
       else if (k === '/') ui.open({ type: 'search' })
       else if (e.key === '?') ui.open({ type: 'shortcuts' })
       else if (k === 'm') usePrefs.getState().set({ sidebar: !usePrefs.getState().sidebar })

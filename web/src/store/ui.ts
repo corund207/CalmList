@@ -12,6 +12,7 @@ export interface Toast {
 type Dialog =
   | { type: 'quickAdd'; defaults?: Partial<Draft> }
   | { type: 'search' }
+  | { type: 'ramble' }
   | { type: 'shortcuts' }
   | { type: 'settings' }
   | { type: 'project'; id?: string }

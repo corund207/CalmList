@@ -1,4 +1,4 @@
-import { CalendarDays, CalendarRange, CircleCheck, Inbox, LayoutGrid, PanelLeftClose, Plus, Search, Settings } from 'lucide-react'
+import { CalendarDays, CalendarRange, CircleCheck, Inbox, LayoutGrid, Mic, PanelLeftClose, Plus, Search, Settings } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useData } from '../hooks'
@@ -70,6 +70,9 @@ export function Sidebar() {
             <button className="add-task-link" onClick={() => open({ type: 'quickAdd' })}>
               <span className="plus"><Plus size={16} strokeWidth={2.5} /></span>
               Add task
+            </button>
+            <button className="nav-item is-action" onClick={() => open({ type: 'ramble' })} title="Ramble  R">
+              <Mic size={18} /><span className="name">Ramble</span>
             </button>
             <NavLink className="nav-item" to="/inbox"><Inbox size={18} /><span className="name">Inbox</span><span className="count">{counts.inbox || ''}</span></NavLink>
             <NavLink className="nav-item" to="/today"><CalendarDays size={18} /><span className="name">Today</span><span className="count">{counts.today || ''}</span></NavLink>

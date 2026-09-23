@@ -11,9 +11,12 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@huggingface/transformers": "^4.3.0",
+    "@mlc-ai/web-llm": "^0.2.85",
     "@supabase/supabase-js": "^2.117.1",
     "lucide-react": "^1.47.0",
     "react": "^19.3.0",

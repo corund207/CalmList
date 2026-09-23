@@ -1,4 +1,4 @@
-import { ArrowRight, Palette, CalendarDays, CalendarRange, CircleCheck, Filter as FilterIcon, Inbox, Keyboard, LayoutGrid, Plus, Search as SearchIcon, Settings } from 'lucide-react'
+import { ArrowRight, Mic, Palette, CalendarDays, CalendarRange, CircleCheck, Filter as FilterIcon, Inbox, Keyboard, LayoutGrid, Plus, Search as SearchIcon, Settings } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useData } from '../hooks'
@@ -35,6 +35,7 @@ export function SearchDialog() {
     const go = (to: string) => () => (navigate(to), close())
     const commands: Item[] = [
       { id: 'c-add', group: 'Actions', icon: <Plus size={16} />, label: 'Add task', hint: 'Q', run: () => open({ type: 'quickAdd' }) },
+      { id: 'c-ramble', group: 'Actions', icon: <Mic size={16} />, label: 'Ramble', hint: 'R', run: () => open({ type: 'ramble' }) },
       { id: 'c-inbox', group: 'Navigation', icon: <Inbox size={16} />, label: 'Go to Inbox', hint: 'G I', run: go('/inbox') },
       { id: 'c-today', group: 'Navigation', icon: <CalendarDays size={16} />, label: 'Go to Today', hint: 'G T', run: go('/today') },
       { id: 'c-up', group: 'Navigation', icon: <CalendarRange size={16} />, label: 'Go to Upcoming', hint: 'G U', run: go('/upcoming') },

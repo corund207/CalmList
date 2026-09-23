@@ -1,9 +1,12 @@
-import { LayoutGrid, List } from 'lucide-react'
+import { LayoutGrid, List, Loader2, Sparkles } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { aiContext, workspace } from '../ai/context'
+import { filterAssist } from '../ai/features'
 import { useData } from '../hooks'
 import { runFilter, validateFilter } from '../lib/filter'
 import { addFilter, addLabel, addProject, updateFilter, updateLabel, updateProject } from '../store/actions'
+import { usePrefs } from '../store/prefs'
 import { useUI } from '../store/ui'
 import { Modal } from './Modal'
 
@@ -107,6 +110,22 @@ export function FilterDialog({ id }: { id?: string }) {
   const [favorite, setFavorite] = useState(existing?.favorite ?? false)
   const error = query.trim() ? validateFilter(query) : null
   const count = query.trim() && !error ? runFilter(query, data).length : null
+  const aiOn = usePrefs((s) => s.ai.provider !== 'rules')
+  const [describe, setDescribe] = useState('')
+  const [thinking, setThinking] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const generate = async () => {
+    setThinking(true)
+    setAiError('')
+    try {
+      setQuery(await filterAssist(describe, workspace(), aiContext()))
+      if (!name.trim()) setName(describe.slice(0, 60))
+    } catch (e) {
+      setAiError((e as Error).message)
+    } finally {
+      setThinking(false)
+    }
+  }
 
   const save = () => {
     if (existing) updateFilter(existing.id, { name: name.trim(), query: query.trim(), favorite })
@@ -124,6 +143,18 @@ export function FilterDialog({ id }: { id?: string }) {
         <span className="micro">Name</span>
         <input className="field" autoFocus value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />
       </label>
+      {aiOn && (
+        <div className="form-field">
+          <span className="micro">Describe it (Filter Assist)</span>
+          <div className="assist-inline">
+            <input className="field" value={describe} placeholder="Urgent work stuff due this week" onChange={(e) => setDescribe(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), describe.trim() && generate())} />
+            <button type="button" className="btn btn-secondary btn-sm" disabled={!describe.trim() || thinking} onClick={generate}>
+              {thinking ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />} Write Query
+            </button>
+          </div>
+          {aiError && <span className="form-hint" data-error>{aiError}</span>}
+        </div>
+      )}
       <label className="form-field">
         <span className="micro">Query</span>
         <input className="field is-mono" value={query} placeholder="(today | overdue) & #Work" onChange={(e) => setQuery(e.target.value)} />

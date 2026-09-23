@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { DEFAULT_AI, type AiConfig, type AiProvider, type SpeechEngine } from '../ai/config'
 import type { ProviderConfig } from './providers'
 
 export interface Session {
@@ -21,6 +22,13 @@ interface Prefs {
   /** Where data syncs to; "local" keeps everything in this browser. */
   provider: ProviderConfig
   session: Session | null
+  /** AI features: which model answers, and the keys for any cloud provider (kept on this device only). */
+  ai: AiConfig
+  aiKeys: Partial<Record<AiProvider, string>>
+  /** Cloud AI providers the person has explicitly agreed to send text to. */
+  aiConsent: AiProvider[]
+  speech: SpeechEngine
+  whisperModel: string
   set(patch: Partial<Omit<Prefs, 'set'>>): void
 }
 
@@ -36,6 +44,11 @@ export const usePrefs = create<Prefs>()(
       sidebar: typeof window === 'undefined' || window.innerWidth > 760,
       provider: { kind: 'local' },
       session: null,
+      ai: DEFAULT_AI,
+      aiKeys: {},
+      aiConsent: [],
+      speech: 'browser',
+      whisperModel: 'Xenova/whisper-tiny.en',
       set: (patch) => set(patch),
     }),
     {
