@@ -239,14 +239,13 @@ While the app is in Google's *Testing* mode, only test users you add can connect
 
 Live numbers from the hosted service. They are aggregate counts only; no one is identified.
 
-<!-- Replace calmlist.vercel.app with your deployment's domain. -->
-![Status](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.vercel.app%2Fapi%2Fstats&query=%24.status&label=status&labelColor=1d1d1f&color=0071e3)
-![Uptime 30 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.vercel.app%2Fapi%2Fstats&query=%24.uptime_30d_label&label=uptime%2030d&labelColor=1d1d1f&color=0071e3)
-![Uptime 7 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.vercel.app%2Fapi%2Fstats&query=%24.uptime_7d_label&label=uptime%207d&labelColor=1d1d1f&color=0071e3)
-![Accounts](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.vercel.app%2Fapi%2Fstats&query=%24.users_total&label=accounts&labelColor=1d1d1f&color=0071e3)
-![Active 30 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.vercel.app%2Fapi%2Fstats&query=%24.active_30d&label=active%2030d&labelColor=1d1d1f&color=0071e3)
-![Syncing 7 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.vercel.app%2Fapi%2Fstats&query=%24.syncing_7d&label=syncing%207d&labelColor=1d1d1f&color=0071e3)
-![Latency p50](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.vercel.app%2Fapi%2Fstats&query=%24.latency_p50&label=latency%20p50&suffix=%20ms&labelColor=1d1d1f&color=0071e3)
+![Status](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.status&label=status&labelColor=1d1d1f&color=0071e3)
+![Uptime 30 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.uptime_30d_label&label=uptime%2030d&labelColor=1d1d1f&color=0071e3)
+![Uptime 7 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.uptime_7d_label&label=uptime%207d&labelColor=1d1d1f&color=0071e3)
+![Accounts](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.users_total&label=accounts&labelColor=1d1d1f&color=0071e3)
+![Active 30 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.active_30d&label=active%2030d&labelColor=1d1d1f&color=0071e3)
+![Syncing 7 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.syncing_7d&label=syncing%207d&labelColor=1d1d1f&color=0071e3)
+![Latency p50](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.latency_p50&label=latency%20p50&suffix=%20ms&labelColor=1d1d1f&color=0071e3)
 
 | Measure | Source |
 | --- | --- |
@@ -256,7 +255,7 @@ Live numbers from the hosted service. They are aggregate counts only; no one is 
 | Compute | Supabase Free plan: shared CPU and 500 MB RAM (Nano), 500 MB database, 5 GB egress; pauses after a week without traffic. Vercel Hobby for the site and functions. |
 | Database version | `db_version` in the JSON |
 
-All of it is at [`/api/stats`](https://calmlist.vercel.app/api/stats) as JSON, cached for five minutes. The numbers come from `calmlist_service_stats()`, which only the service role can call.
+All of it is at [`/api/stats`](https://calmlist-steel.vercel.app/api/stats) as JSON, cached for five minutes. The numbers come from `calmlist_service_stats()`, which only the service role can call.
 
 For the status checks, set the Actions variable `STATUS_URL` to `https://<app>/api/status-check` and the secret `CRON_SECRET` to the same value as in Vercel.
 
@@ -366,15 +365,15 @@ The UI follows the [Jonah Chang design system](https://claude.ai/artifact/FcShiF
 | Website and app | [corund207.github.io/CalmList](https://corund207.github.io/CalmList/) | Deploys on every push to `main` |
 | Supabase project | `calmlist` in the PersonalProgects org, us-east-2 (`ddvtufcbrvzjislojlqp`) | Schema applied, row-level security and realtime on |
 | Hosted app → Supabase | Actions variables `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Set: the Sync tab comes pre-filled |
-| Vercel (site, MCP, stats) | `vercel.json` | Ready to import; not deployed yet |
-| Migration `…120000_agent_rpc` (AI assistants) | `supabase/migrations/` | Not yet applied to the hosted project |
+| Vercel (site, app, MCP, stats) | [calmlist-steel.vercel.app](https://calmlist-steel.vercel.app/) | Deploys on every push to `main`; Supabase URL and anon key set |
+| Migrations | `supabase/migrations/` | All applied to the hosted project |
 
 ## What you still need to do
 
 **For the new features:**
 
-- **Apply the new migration:** from the CalmList folder, `npm run supabase:push` (or paste `supabase/migrations/20260923120000_agent_rpc.sql` into the SQL editor). AI assistants need it.
-- **Deploy to Vercel** and set its variables ([Hosting on Vercel](#hosting-on-vercel)), then replace `calmlist.vercel.app` in the status badges with your domain.
+- **Vercel secrets:** in the [project settings](https://vercel.com/jonahchang207s-projects/calmlist/settings/environment-variables), add `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) and `CRON_SECRET` (a random string), then redeploy. Add the same `CRON_SECRET` as a GitHub Actions secret. Until then `/api/stats` answers 503 and the badges show nothing.
+- **Supabase redirect URLs:** in [Authentication → URL Configuration](https://supabase.com/dashboard/project/ddvtufcbrvzjislojlqp/auth/url-configuration), add `https://calmlist-steel.vercel.app/app/**`, so confirmation and reset emails work from the Vercel app.
 - **Google Calendar:** create the OAuth client and set `VITE_GOOGLE_CLIENT_ID` ([steps](#google-calendar)).
 - **Privacy contact:** the GDPR needs a way to reach you privately. Add a contact email to `site/legal.html` (it currently points to GitHub issues). If you target Germany or Austria, also add an Impressum with a postal address.
 - **EU data residency (optional):** the Supabase project is in us-east-2. For EU users, a project in an EU region (e.g. Frankfurt) avoids the transfer to the US entirely.
