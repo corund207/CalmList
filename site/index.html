@@ -20,7 +20,8 @@
       <a class="brand" href="./">CalmList</a>
       <nav class="nav" aria-label="Primary">
         <a href="#features">Features</a>
-        <a href="#self-host">Self-host</a>
+        <a href="#themes">Themes</a>
+        <a href="#self-host">Sync</a>
         <a href="https://github.com/corund207/CalmList" rel="noopener">GitHub <svg class="is-up-right" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
         <a class="is-cta" href="app/">Open App</a>
       </nav>
@@ -82,15 +83,29 @@
       </figure>
     </section>
 
+    <section class="showcase" id="themes">
+      <div class="showcase-copy reveal">
+        <p class="showcase-eyebrow">48 themes</p>
+        <h2>Make it<br />yours.</h2>
+        <p class="showcase-body">Calm dark and light, palettes that follow the sun and the seasons, animated aurora, starfield and synthwave, and niche favourites from Nord to a green-phosphor terminal. Every one is contrast-checked.</p>
+      </div>
+      <div class="theme-shots reveal">
+        <figure class="media"><img src="assets/theme-aurora.png" width="2880" height="1800" loading="lazy" alt="CalmList in the Aurora theme, with soft northern lights behind the list." /><figcaption class="label">Aurora · Animated</figcaption></figure>
+        <figure class="media"><img src="assets/theme-synthwave.png" width="2880" height="1800" loading="lazy" alt="CalmList in the Synthwave theme, with a neon sun and grid." /><figcaption class="label">Synthwave · Animated</figcaption></figure>
+        <figure class="media"><img src="assets/theme-terminal.png" width="2880" height="1800" loading="lazy" alt="CalmList in the Terminal theme: green monospace text with scanlines." /><figcaption class="label">Terminal · Niche</figcaption></figure>
+        <figure class="media"><img src="assets/theme-paper.png" width="2880" height="1800" loading="lazy" alt="CalmList in the Paper theme: warm off-white with terracotta accents." /><figcaption class="label">Paper · Light</figcaption></figure>
+      </div>
+    </section>
+
     <section class="split">
       <div class="split-copy reveal">
         <p class="eyebrow">Local-first</p>
         <h2 class="display-sm">Yours,<br />even offline.</h2>
-        <p class="lede">Tasks live in your browser from the first keystroke. Sign in to a CalmList server and every device stays in step, with edits made offline sent the moment you reconnect.</p>
+        <p class="lede">Tasks live in your browser from the first keystroke. Connect Supabase or a CalmList server and every device stays in step, with edits made offline sent the moment you reconnect.</p>
         <dl class="meta">
-          <div><dt>Storage</dt><dd>Browser, then SQLite</dd></div>
+          <div><dt>Storage</dt><dd>Browser, Supabase or SQLite</dd></div>
           <div><dt>Sync</dt><dd>Incremental, last write wins</dd></div>
-          <div><dt>Themes</dt><dd>Dark, light, system</dd></div>
+          <div><dt>Themes</dt><dd>48, dark to animated</dd></div>
           <div><dt>License</dt><dd>MIT</dd></div>
         </dl>
       </div>
@@ -101,18 +116,24 @@
 
     <section class="chapter" id="self-host">
       <div class="heading reveal">
-        <p class="eyebrow">Self-host</p>
-        <h2 class="display-md">One command.<br />Your server.</h2>
-        <p class="intro">The sync service is a single Node process with an SQLite file. It also serves the app, so one container is the whole product.</p>
+        <p class="eyebrow">Sync your way</p>
+        <h2 class="display-md">Your data.<br />Your backend.</h2>
+        <p class="intro">Keep everything on the device, sync through Supabase Cloud, run Supabase yourself with one command, or use the tiny bundled server.</p>
+      </div>
+      <div class="specs reveal">
+        <div><h3>This device</h3><p>The default. Private, offline, instant. Export JSON whenever you like.</p></div>
+        <div><h3>Supabase Cloud</h3><p>Paste your project URL and anon key. Row-level security and live updates included.</p></div>
+        <div><h3>Self-hosted Supabase</h3><p><code>npm run supabase:selfhost</code> fetches Supabase, generates every secret and applies the schema.</p></div>
+        <div><h3>CalmList server</h3><p>One Node process and one SQLite file. A single Docker container serves the app too.</p></div>
       </div>
       <div class="code reveal">
-        <p class="label">Docker</p>
-<pre><code>docker build -t calmlist .
-docker run -p 8787:8787 -v calmlist:/data calmlist</code></pre>
-        <p class="label">Or from source · Node 24</p>
-<pre><code>npm install
-npm run build
-npm start          # http://localhost:8787</code></pre>
+        <p class="label">Self-hosted Supabase · Docker</p>
+<pre><code>npm run supabase:selfhost -- --url https://tasks.example.com</code></pre>
+        <p class="label">Supabase Cloud · CLI</p>
+<pre><code>npm run supabase:link -- --project-ref your-ref
+npm run supabase:push</code></pre>
+        <p class="label">CalmList server · Docker</p>
+<pre><code>docker build -t calmlist . && docker run -p 8787:8787 -v calmlist:/data calmlist</code></pre>
       </div>
     </section>
 
