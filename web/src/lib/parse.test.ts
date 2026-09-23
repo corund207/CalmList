@@ -51,6 +51,7 @@ describe('parseDate', () => {
     expect(date('every mon, fri at 9am')).toEqual({ date: '2026-09-25', time: '09:00', recurrence: { every: 1, unit: 'week', weekdays: [1, 5] } })
     expect(date('every! 3 days')?.recurrence).toEqual({ every: 3, unit: 'day', fromCompletion: true })
     expect(date('monthly')?.recurrence).toEqual({ every: 1, unit: 'month' })
+    expect(date('Weekly review every friday 4pm')).toEqual({ date: '2026-09-25', time: '16:00', recurrence: { every: 1, unit: 'week', weekdays: [5] } })
   })
 })
 

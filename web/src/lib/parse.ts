@@ -71,14 +71,15 @@ const DATE_RULES: DateRule[] = [
   [new RegExp(`\\b(\\d{1,2})${ORD}\\s+(?:of\\s+)?${MON}(?:\\s+(\\d{4}))?\\b`, 'i'), (m, n) => upcoming(n, month(m[2]), +m[1], m[3])],
 ]
 
-const RECURRENCE_RE = new RegExp(
-  `\\b(?:every(!)?\\s+(?:(other|\\d+)\\s+)?(day|week|month|year|weekday|workday|${WD}(?:\\s*(?:,|and)\\s*${WD})*)s?|(daily|weekly|monthly|yearly|annually))\\b`,
+const EVERY_RE = new RegExp(
+  String.raw`\bevery(!)?\s+(?:(other|\d+)\s+)?(day|week|month|year|weekday|workday|${WD}(?:\s*(?:,|and)\s*${WD})*)s?\b`,
   'i',
 )
+const ADVERB_RE = /\b(daily|weekly|monthly|yearly|annually)\b/i
 
 const parseRecurrence = (m: RegExpExecArray): Recurrence | null => {
-  if (m[m.length - 1]) {
-    const unit = { daily: 'day', weekly: 'week', monthly: 'month', yearly: 'year', annually: 'year' }[m[m.length - 1].toLowerCase()]
+  if (m.length === 2) {
+    const unit = { daily: 'day', weekly: 'week', monthly: 'month', yearly: 'year', annually: 'year' }[m[1].toLowerCase()]
     return { every: 1, unit: unit as Recurrence['unit'] }
   }
   const every = m[2] ? (m[2].toLowerCase() === 'other' ? 2 : Math.max(1, Number(m[2]))) : 1
@@ -140,7 +141,8 @@ export const parseDate = (text: string, now = new Date()): DateMatch | null => {
   let date: Date | null = null
   let recurrence: Recurrence | undefined
 
-  const rec = RECURRENCE_RE.exec(text)
+  // An explicit "every …" wins over an adverb, so "Weekly review every friday" repeats on Fridays.
+  const rec = EVERY_RE.exec(text) ?? ADVERB_RE.exec(text)
   if (rec) {
     const r = parseRecurrence(rec)
     if (r) {
