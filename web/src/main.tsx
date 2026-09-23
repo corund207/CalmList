@@ -1,9 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { App } from './App'
 import './styles/tokens.css'
+import './styles/base.css'
+import './styles/app.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <main style={{ padding: 48, fontFamily: 'var(--font-sans)' }}>CalmList.</main>
+    <App />
   </StrictMode>,
 )
