@@ -12,6 +12,7 @@
     "dev:server": "npm run dev --workspace server",
     "build": "npm run build --workspace web && npm run build --workspace server",
     "build:site": "node scripts/build-site.mjs",
+    "tauri": "tauri",
     "app:dev": "tauri dev",
     "app:build": "tauri build",
     "app:ios": "tauri ios dev",
