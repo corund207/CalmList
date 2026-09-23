@@ -144,9 +144,11 @@ export async function testConnection(provider: ProviderConfig): Promise<string> 
   if (provider.kind !== 'supabase') return 'Nothing to test for local storage.'
   if (!/^https?:\/\//.test(provider.url) || !provider.anonKey) throw new Error('Enter the project URL and its anon (public) key.')
   const client = await supabaseClient(provider.url, provider.anonKey)
-  const { error } = await client.from(SUPABASE_TABLE).select('id', { head: true, count: 'exact' }).limit(1)
-  if (error && /does not exist|schema cache|42P01/i.test(`${error.message} ${error.code}`))
+  // Signed out, a set-up table answers "permission denied" (42501): row-level security doing its job.
+  const { error } = await client.from(SUPABASE_TABLE).select('id').limit(0)
+  if (!error || error.code === '42501') return 'Supabase project is reachable and set up. Sign in or create an account.'
+  if (error.code === 'PGRST205' || error.code === '42P01')
     throw new Error(`Connected, but the ${SUPABASE_TABLE} table is missing. Run the setup SQL in the project's SQL editor.`)
-  if (error) throw new Error(error.message)
-  return 'Supabase project is reachable and set up.'
+  if (/api key/i.test(error.message)) throw new Error('Supabase rejected that key. Copy the anon public key from Project Settings → API.')
+  throw new Error(error.message || `Supabase responded with an error.`)
 }
