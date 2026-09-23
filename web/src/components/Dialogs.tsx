@@ -2,6 +2,7 @@ import { useUI } from '../store/ui'
 import { ConfirmDialog, FilterDialog, LabelDialog, ProjectDialog } from './EntityDialogs'
 import { QuickAdd } from './QuickAdd'
 import { SearchDialog, ShortcutsDialog } from './Search'
+import { SettingsDialog } from './Settings'
 
 /** Renders whichever global dialog is open. */
 export function Dialogs() {
@@ -20,6 +21,8 @@ export function Dialogs() {
       return <SearchDialog />
     case 'shortcuts':
       return <ShortcutsDialog />
+    case 'settings':
+      return <SettingsDialog />
     case 'confirm':
       return <ConfirmDialog {...dialog} />
     default:

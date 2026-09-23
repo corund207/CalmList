@@ -18,17 +18,20 @@ export function Modal({ onClose, label, children, size = 'md', align = 'center' 
     return () => prev?.focus?.()
   }, [])
 
+  // Inner controls that handle Escape themselves (popovers, editors) call preventDefault.
+  const close = useRef(onClose)
+  close.current = onClose
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && close.current()
+    document.addEventListener('keydown', on)
+    return () => document.removeEventListener('keydown', on)
+  }, [])
+
   return createPortal(
     <div
       className="backdrop"
       data-align={align}
       onPointerDown={(e) => e.target === e.currentTarget && onClose()}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') {
-          e.stopPropagation()
-          onClose()
-        }
-      }}
     >
       <div ref={ref} className="modal" data-size={size} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1}>
         {children}

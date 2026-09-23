@@ -13,6 +13,8 @@ export interface Backend {
   push(changes: Change[], data: Data): void
   /** Starts background sync; returns a stop function. */
   start?(onRemote: (changes: Change[]) => void, onStatus: (s: SyncStatus) => void): () => void
+  /** Settles after the first round trip to the server (or its failure). */
+  firstSync?: Promise<void>
 }
 
 const read = <T,>(key: string): T | null => {
@@ -78,6 +80,8 @@ export class CloudBackend implements Backend {
   private cache: CloudCache
   private key: string
   private flushing = false
+  private settle!: () => void
+  firstSync = new Promise<void>((r) => (this.settle = r))
 
   constructor(
     private api: string,
@@ -167,5 +171,6 @@ export class CloudBackend implements Backend {
     } catch {
       this.onStatus(navigator.onLine ? 'error' : 'offline')
     }
+    this.settle()
   }
 }

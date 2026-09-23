@@ -14,7 +14,7 @@ function NameInput({ initial = '', submit, onSubmit, onCancel }: { initial?: str
         e.preventDefault()
         if (name.trim()) onSubmit(name.trim())
       }}
-      onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), onCancel())}
+      onKeyDown={(e) => e.key === 'Escape' && (e.preventDefault(), e.stopPropagation(), onCancel())}
     >
       <input className="field" autoFocus value={name} placeholder="Name this section" maxLength={120} onChange={(e) => setName(e.target.value)} />
       <div className="editor-actions">

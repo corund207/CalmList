@@ -51,5 +51,8 @@ export const boot = async () => {
     (changes) => useStore.setState((s) => ({ data: applyChanges(s.data, changes) })),
     (status) => useStore.setState({ status }),
   )
-  if (session) setTimeout(seed, 1500) // create an Inbox only once the server has had a chance to send one
+  if (session) {
+    await backend.firstSync // create an Inbox only once the server has had a chance to send one
+    if (id === run) seed()
+  }
 }

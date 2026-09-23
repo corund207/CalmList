@@ -52,6 +52,7 @@ export function Popover({ anchor, onClose, children, width = 260, label }: Props
       style={{ width, top: pos?.top ?? -9999, left: pos?.left ?? -9999 }}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
+          e.preventDefault()
           e.stopPropagation()
           onClose()
           anchor?.focus()

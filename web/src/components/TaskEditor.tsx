@@ -10,6 +10,8 @@ import { preview, resolve, type Draft } from '../store/quickadd'
 import { DatePicker, LabelPicker, PriorityPicker, PRIORITY_NAMES, ProjectPicker } from './pickers'
 import { Popover, usePopover } from './Popover'
 
+const ZWSP = String.fromCharCode(0x200b)
+
 /** An input that highlights recognised tokens (dates, #projects, @labels, p1) as you type. */
 function SmartInput({ value, tokens, onChange, placeholder, autoFocus }: {
   value: string
@@ -33,7 +35,7 @@ function SmartInput({ value, tokens, onChange, placeholder, autoFocus }: {
     parts.push({ text: value.slice(t.start, t.end), type: t.type })
     at = t.end
   }
-  parts.push({ text: value.slice(at) + '​' }) // keeps a trailing space measurable
+  parts.push({ text: value.slice(at) + ZWSP }) // keeps a trailing space measurable
 
   return (
     <div className="smart">
@@ -106,6 +108,7 @@ export function TaskEditor({ initial, submitLabel = 'Add task', onSubmit, onCanc
       submit()
     }
     if (e.key === 'Escape') {
+      e.preventDefault()
       e.stopPropagation()
       onCancel()
     }
