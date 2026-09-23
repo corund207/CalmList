@@ -9,6 +9,7 @@ import { useTheme } from './hooks'
 import { boot, useStore } from './store/store'
 import { Inbox, ProjectView } from './views/ProjectView'
 import { FilterView, FiltersLabels, LabelView } from './views/FiltersLabels'
+import { Completed } from './views/Completed'
 import { SearchView } from './views/SearchView'
 import { Today } from './views/Today'
 import { Upcoming } from './views/Upcoming'
@@ -56,6 +57,7 @@ export function App() {
           <Route path="/filters-labels" element={<FiltersLabels />} />
           <Route path="/label/:id" element={<LabelView />} />
           <Route path="/filter/:id" element={<FilterView />} />
+          <Route path="/completed" element={<Completed />} />
           <Route path="/search" element={<SearchView />} />
           <Route path="/task/:id" element={<TaskLink />} />
           <Route path="*" element={<Navigate to="/today" replace />} />
