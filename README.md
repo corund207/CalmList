@@ -5,9 +5,9 @@
 **Plan less. Finish more.**
 
 A calm, keyboard-first task manager inspired by Todoist.<br />
-Local-first in the browser, with an optional sync server you host yourself.
+Local-first in the browser, with 48 themes and sync through Supabase or a server you host yourself.
 
-[**Open the app**](https://corund207.github.io/CalmList/app/) · [**Website**](https://corund207.github.io/CalmList/) · [Self-host](#self-hosting) · [Shortcuts](#keyboard-shortcuts)
+[**Open the app**](https://corund207.github.io/CalmList/app/) · [**Website**](https://corund207.github.io/CalmList/) · [Themes](#themes) · [Sync](#sync-options) · [Shortcuts](#keyboard-shortcuts)
 
 [![CI and Pages](https://github.com/corund207/CalmList/actions/workflows/pages.yml/badge.svg)](https://github.com/corund207/CalmList/actions/workflows/pages.yml)
 ![Node 24](https://img.shields.io/badge/node-24-000000?labelColor=1d1d1f)
@@ -27,11 +27,13 @@ Local-first in the browser, with an optional sync server you host yourself.
 | **Projects, sections, boards** | Any project can be a list or a kanban board. Drag tasks to reorder or move them between sections. |
 | **Sub-tasks, notes, comments** | A full task view with descriptions, deadlines, sub-tasks and a comment thread. |
 | **Labels & filters** | Saved filters in a Todoist-style query language, validated live with a match count. |
-| **Command palette** | Press <kbd>/</kbd> to find any task, project, label or filter, or run a query on the spot. |
+| **Command palette** | Press <kbd>/</kbd> to find any task, project, label, filter or theme, or run a query on the spot. |
 | **Undo** | Completing, deleting and bulk rescheduling all come with an Undo toast. |
 | **Progress** | Daily goal, streak, a 14-day chart and an activity log of what you finished. |
-| **Local-first sync** | Works offline in the browser. Sign in to a CalmList server and devices stay in step; offline edits queue and send on reconnect. |
-| **Yours** | Export and import JSON at any time. Dark, light and system themes. MIT licensed. |
+| **48 themes** | Dark, light, dynamic (follows the clock or the seasons), animated (aurora, starfield, synthwave, rain…) and niche (Nord, Dracula, Terminal, Pocket…), plus a custom accent colour. |
+| **Sync your way** | Works offline in the browser. Connect Supabase Cloud, a self-hosted Supabase, or the bundled CalmList server; offline edits queue and send on reconnect. |
+| **Integrations** | Export dated tasks to Google, Apple or Outlook Calendar (.ics) and import Todoist projects (CSV). |
+| **Yours** | Export and import JSON at any time. MIT licensed. |
 
 <table>
   <tr>
@@ -39,6 +41,120 @@ Local-first in the browser, with an optional sync server you host yourself.
     <td width="50%"><img src="site/assets/board.png" alt="A project as a board" /></td>
   </tr>
 </table>
+
+## Themes
+
+Settings → **Appearance** has a gallery of 48 themes. Pick one, or choose **Match system** and assign a light and a dark theme. CI checks every palette for text contrast (4.5:1 for body text) and legible button labels.
+
+| Group | Themes |
+| --- | --- |
+| **Dark** | Calm Dark (the design system default), Midnight, Graphite, OLED Mono, Forest Night, Plum, Ember |
+| **Light** | Calm Light, Paper, Sky, Sage, Sand, Lilac |
+| **Dynamic** | Daylight (dawn, day, golden hour, dusk, night), Night Shift (warm dark after 8 pm), Seasons, Daily Mix |
+| **Animated** | Aurora, Starfield, Synthwave, Rainy Window, Lava Lamp, Digital Rain, Fireflies, Snowfall, Clouds, Ocean, Sakura, Dreamy |
+| **Niche** | Terminal, Amber CRT, Pocket, Blueprint, Nord, Dracula, Gruvbox, Solarized Dark and Light, Catppuccin Mocha and Latte, Rosé Pine, Tokyo Night, Vaporwave, Coffee, E-Ink, Newsprint, Bubblegum, High Contrast |
+
+Animated backdrops pause when the tab is hidden, cap the pixel ratio, and switch off entirely under *reduced motion* or with the **Animate theme backdrops** toggle. Type `theme` in the command palette to switch without opening settings.
+
+<table>
+  <tr>
+    <td width="50%"><img src="site/assets/theme-aurora.png" alt="Aurora theme" /></td>
+    <td width="50%"><img src="site/assets/theme-terminal.png" alt="Terminal theme" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="site/assets/theme-synthwave.png" alt="Synthwave theme" /></td>
+    <td width="50%"><img src="site/assets/theme-paper.png" alt="Paper theme" /></td>
+  </tr>
+</table>
+
+## Sync options
+
+Open **Settings → Sync** and pick where your tasks live.
+
+| Option | Best for | Set up |
+| --- | --- | --- |
+| **This device** | Privacy, offline use, trying it out | Nothing. It's the default. |
+| **Supabase Cloud** | Syncing with no servers to run | Create a project, apply the schema, paste the URL and anon key |
+| **Self-hosted Supabase** | Owning everything, with Supabase's auth and realtime | `npm run supabase:selfhost` |
+| **CalmList server** | The smallest possible footprint | `docker run` or `npm start` |
+
+### Supabase Cloud
+
+1. Create a project at [supabase.com](https://supabase.com/dashboard/new).
+2. Apply the schema, either way:
+   - **SQL editor:** paste [`supabase/migrations/20260923000000_calmlist.sql`](supabase/migrations/20260923000000_calmlist.sql) and run it. The app's *Copy Setup SQL* button copies it for you.
+   - **CLI:** `npm run supabase:link -- --project-ref <ref>`, then `npm run supabase:push`.
+3. In CalmList, open **Settings → Sync → Supabase**, paste the project URL and the **anon public** key (Project Settings → API), press *Test Connection*, then create an account.
+
+The schema is one table, `calmlist_items`, with row-level security (people only see their own rows), a revision trigger for incremental sync, and a realtime publication so devices update live. Hosted Supabase asks new users to confirm their email by default; you can turn that off under Authentication → Providers → Email.
+
+### Self-hosted Supabase
+
+Needs Docker (with the compose plugin) and git.
+
+```bash
+npm run supabase:selfhost -- --url https://tasks.example.com --app-url https://you.github.io/CalmList/app/
+```
+
+The script:
+
+- fetches Supabase's official Docker setup into `supabase-selfhost/`
+- generates every secret: Postgres password, JWT secret, signed anon and service-role keys, dashboard login, and encryption keys
+- turns on email auto-confirm, since there's no SMTP by default (pass `--smtp` to keep confirmations)
+- starts the stack and applies the CalmList schema
+- prints the URL and anon key to paste into the app
+
+Re-running keeps the existing secrets. `--no-start` only writes the configuration. Put HTTPS in front of port 8000 (Caddy, nginx or a Cloudflare Tunnel) before exposing it.
+
+### Pointing the hosted app at your Supabase
+
+In the repo's **Settings → Secrets and variables → Actions → Variables**, set `SUPABASE_URL` and `SUPABASE_ANON_KEY`. The Pages build then pre-fills the Supabase option. Also set the `SUPABASE_PROJECT_REF` variable and the `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` secrets, and CI will run `supabase db push` on every push to `main`.
+
+### CalmList server
+
+The bundled server is one Node process with one SQLite file (`node:sqlite`, no native modules). It also serves the built web app, so a single container is the whole product.
+
+```bash
+docker build -t calmlist .
+docker run -d -p 8787:8787 -v calmlist:/data --name calmlist calmlist
+```
+
+Or from source: `npm install && npm run build && npm start` (copy `server/.env.example` to `server/.env` first to change settings).
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `8787` | Port for the API and the bundled app |
+| `DATABASE_PATH` | `calmlist.db` (`/data/calmlist.db` in Docker) | SQLite file; keep it on a persistent volume |
+| `CORS_ORIGIN` | `*` | Comma-separated origins allowed to call the API, e.g. `https://corund207.github.io` |
+| `STATIC_DIR` | `../../web/dist` | Built web app to serve, relative to `server/src` |
+
+Put it behind HTTPS before using it for real accounts. To use it from the GitHub Pages app, set `CORS_ORIGIN=https://corund207.github.io`, then choose **Settings → Sync → CalmList server** and enter its URL.
+
+<details>
+<summary>API reference</summary>
+
+| Method | Path | |
+| --- | --- | --- |
+| `POST` | `/api/auth/signup` | `{ email, password, name? }` → `{ token, user }` |
+| `POST` | `/api/auth/login` | `{ email, password }` → `{ token, user }` |
+| `POST` | `/api/auth/logout` | Revokes the bearer token |
+| `GET` | `/api/me` | The signed-in user |
+| `GET` | `/api/sync?since=<rev>` | Changes after a revision, deletions as `data: null` |
+| `POST` | `/api/sync` | `{ changes: [{ kind, id, data \| null }] }` → `{ rev }` |
+| `GET` | `/api/export` | Everything the account owns |
+| `DELETE` | `/api/account` | Deletes the account and its data |
+
+Passwords are hashed with scrypt; sessions are random 256-bit bearer tokens stored only as SHA-256 hashes and expire after 90 days. Auth endpoints are rate-limited.
+
+</details>
+
+## Integrations
+
+Under Settings → **Integrations**:
+
+- **Google, Apple and Outlook Calendar:** download every open, dated task as an `.ics` file, with repeats written as `RRULE`s, and import it into your calendar.
+- **Todoist:** in Todoist, choose a project's *Export as a template → CSV*, then import one or many files. Sections, sub-tasks (from indentation), labels, priorities, dates and comments come across.
+- **JSON:** Settings → Data exports and imports everything.
 
 ## Quick start
 
@@ -49,19 +165,21 @@ git clone https://github.com/corund207/CalmList.git
 cd CalmList
 npm install
 npm run dev            # web app on http://localhost:5173 (local mode)
-npm run dev:server     # sync server on http://localhost:8787 (optional, proxied at /api)
+npm run dev:server     # CalmList server on http://localhost:8787 (optional, proxied at /api)
 ```
 
-With both running, open **Settings → Account & Sync**, leave *Server* blank and create an account.
+With both running, open **Settings → Sync → CalmList server**, leave *Server* blank and create an account.
 
 | Script | What it does |
 | --- | --- |
 | `npm run dev` | Vite dev server for the web app |
-| `npm run dev:server` | Sync server with file watching |
+| `npm run dev:server` | CalmList server with file watching |
 | `npm run build` | Production build of the web app (`web/dist`) and server typecheck |
 | `npm start` | Runs the server, which also serves `web/dist` on the same port |
 | `npm test` | Web unit tests (Vitest) and API tests (`node:test`) |
 | `npm run typecheck` | TypeScript across both workspaces |
+| `npm run supabase:selfhost` | Sets up and starts a self-hosted Supabase for CalmList |
+| `npm run supabase:link` / `supabase:push` | Links a hosted Supabase project and applies the schema |
 
 ## Quick add syntax
 
@@ -97,82 +215,47 @@ Example: `(today | overdue) & #Work & !@waiting`
 | Key | Action |
 | --- | --- |
 | <kbd>Q</kbd> | Quick add |
-| <kbd>/</kbd> | Search and commands |
+| <kbd>/</kbd> | Search, commands and themes |
 | <kbd>G</kbd> then <kbd>I</kbd> / <kbd>T</kbd> / <kbd>U</kbd> / <kbd>F</kbd> / <kbd>C</kbd> | Inbox, Today, Upcoming, Filters & Labels, Completed |
 | <kbd>M</kbd> | Toggle the sidebar |
 | <kbd>?</kbd> | Show all shortcuts |
 | <kbd>Enter</kbd> / <kbd>Ctrl</kbd>+<kbd>Enter</kbd> | Save a task |
 | <kbd>Esc</kbd> | Close or cancel |
 
-## Self-hosting
-
-The sync server is one Node process with one SQLite file (`node:sqlite`, no native modules). It also serves the built web app, so a single container is the whole product.
-
-**Docker**
-
-```bash
-docker build -t calmlist .
-docker run -d -p 8787:8787 -v calmlist:/data --name calmlist calmlist
-```
-
-**From source**
-
-```bash
-npm install && npm run build
-cp server/.env.example server/.env   # edit as needed
-npm start                            # http://localhost:8787
-```
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `PORT` | `8787` | Port for the API and the bundled app |
-| `DATABASE_PATH` | `calmlist.db` (`/data/calmlist.db` in Docker) | SQLite file; keep it on a persistent volume |
-| `CORS_ORIGIN` | `*` | Comma-separated origins allowed to call the API, e.g. `https://corund207.github.io` |
-| `STATIC_DIR` | `../../web/dist` | Built web app to serve, relative to `server/src` |
-
-Put it behind HTTPS (Caddy, nginx, Fly.io, Railway, Render or any VPS) before using it for real accounts.
-
-**Using the GitHub Pages app with your server:** open the app, go to **Settings → Account & Sync**, enter your server's URL (for example `https://calmlist.example.com`) and sign in. Set `CORS_ORIGIN=https://corund207.github.io` on the server first.
-
-### API
-
-| Method | Path | |
-| --- | --- | --- |
-| `POST` | `/api/auth/signup` | `{ email, password, name? }` → `{ token, user }` |
-| `POST` | `/api/auth/login` | `{ email, password }` → `{ token, user }` |
-| `POST` | `/api/auth/logout` | Revokes the bearer token |
-| `GET` | `/api/me` | The signed-in user |
-| `GET` | `/api/sync?since=<rev>` | Changes after a revision, deletions as `data: null` |
-| `POST` | `/api/sync` | `{ changes: [{ kind, id, data \| null }] }` → `{ rev }` |
-| `GET` | `/api/export` | Everything the account owns |
-| `DELETE` | `/api/account` | Deletes the account and its data |
-
-Passwords are hashed with scrypt; sessions are random 256-bit bearer tokens stored only as SHA-256 hashes and expire after 90 days. Auth endpoints are rate-limited.
-
 ## How it works
 
 ```
 web/                 React 19 + Vite + TypeScript
-  src/lib/           pure logic: date parser, quick add, recurrence, filter language (unit tested)
-  src/store/         Zustand store, local and cloud backends, actions with undo
-  src/components/    task rows, editor, pickers, dialogs, drag and drop
+  src/lib/           pure logic: date parser, quick add, recurrence, filters, .ics, Todoist CSV (unit tested)
+  src/store/         Zustand store, sync providers (local, CalmList, Supabase), actions with undo
+  src/themes/        48 themes, the palette → token engine, animated backdrops, the gallery
+  src/components/    task rows, editor, pickers, dialogs, drag and drop, settings
   src/views/         Today, Upcoming, Project/Board, Filters & Labels, Completed, Search
 server/              Hono on Node 24, node:sqlite, runs TypeScript natively
+supabase/            Supabase CLI config and the schema migration
+scripts/             supabase-selfhost.mjs
 site/                GitHub Pages landing page
 ```
 
-Every record (task, project, section, label, filter, comment, completion event) is a JSON document. The client applies changes locally first and computes their inverse for undo. The cloud backend keeps an offline cache and an outbox; the server gives each change a per-user revision number so clients pull only what they have not seen. Conflicts resolve last write wins.
+Every record (task, project, section, label, filter, comment, completion event) is a JSON document. The client applies changes locally first and computes their inverse for undo. Remote providers share one backend, with an offline cache and an outbox, and differ only in transport. The CalmList server and Supabase both stamp each write with an increasing revision, so clients pull only what they have not seen, and Supabase also pushes changes over realtime. Conflicts resolve last write wins.
 
-The UI follows the [Jonah Chang design system](https://claude.ai/artifact/FcShiF9BeJoJ54daksaej8): pure black ground, graphite surfaces, one blue for action, pill buttons, hairline lists and the SF system stack. Priority is shown by ring weight rather than extra hues.
+The UI follows the [Jonah Chang design system](https://claude.ai/artifact/FcShiF9BeJoJ54daksaej8): pure black ground, graphite surfaces, one blue for action, pill buttons, hairline lists and the SF system stack. Priority is shown by ring weight rather than extra hues. Other themes swap the palette through the same tokens.
 
 ## What you still need to do
 
-GitHub Pages is already enabled and deploys on every push to `main`. The hosted app runs in local mode, so these steps are only for cross-device sync:
+GitHub Pages is live and redeploys on every push to `main`. Everything works on-device out of the box; these steps turn on cross-device sync.
 
-1. **Host the sync server.** Deploy the Docker image (or `npm start`) somewhere with HTTPS and a persistent volume for `/data`.
-2. **Allow the Pages origin.** Set `CORS_ORIGIN=https://corund207.github.io` on that server, or serve the app from the server itself and skip CORS entirely.
-3. **Sign in.** In the app, open **Settings → Account & Sync**, enter the server URL and create an account. Tick *Bring the tasks on this device into the account* to keep what you already have.
-4. **Back up** the SQLite file on your server, or use **Settings → Data → Export JSON** now and then.
+**Supabase Cloud (recommended)**
+
+1. Run `npx supabase login` once, then create a project at [supabase.com](https://supabase.com/dashboard/new) (or with `npx supabase projects create calmlist`).
+2. Apply the schema: `npm run supabase:link -- --project-ref <ref>`, then `npm run supabase:push`. Or paste the SQL into the dashboard's SQL editor.
+3. In Supabase → Authentication → URL Configuration, add `https://corund207.github.io/CalmList/app/` to Redirect URLs.
+4. In the GitHub repo, add the Actions variables `SUPABASE_URL` and `SUPABASE_ANON_KEY` so the hosted app comes pre-configured.
+5. Open the app → **Settings → Sync → Supabase** → create your account.
+
+**Or self-hosted Supabase:** install Docker, run `npm run supabase:selfhost -- --url https://your-domain`, put HTTPS in front of port 8000, and paste the printed URL and anon key into the app.
+
+**Or the CalmList server:** deploy the Docker image with a volume for `/data`, set `CORS_ORIGIN=https://corund207.github.io`, and sign in under **Settings → Sync → CalmList server**.
 
 ## License
 
