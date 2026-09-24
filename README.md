@@ -140,7 +140,7 @@ npm run app:build      # installers for this OS in src-tauri/target/release/bund
 
 Windows needs the Visual Studio C++ Build Tools and WebView2 (built into Windows 11). macOS needs the Xcode command line tools.
 
-**CI:** the [Native apps](.github/workflows/native.yml) workflow builds Windows, macOS (universal) and iOS on GitHub's runners. Run it from the Actions tab and download the artifacts, or push a tag (`git tag v1.0.0 && git push --tags`) to get a draft release with the installers attached.
+**CI:** the [Native apps](.github/workflows/native.yml) workflow builds Windows, macOS (universal) and iOS on GitHub's runners. Run it from the Actions tab and download the artifacts, or push a tag (`git tag v0.1.0-beta.2 && git push --tags`) to publish a release with every platform attached; tags with a hyphen become pre-releases, and `.github/release-notes/<tag>.md` supplies the notes.
 
 **iOS:**
 

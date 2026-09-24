@@ -1,6 +1,6 @@
 [package]
 name = "calmlist"
-version = "1.0.0"
+version = "0.1.0"
 description = "A calm, keyboard-first task manager."
 authors = ["Jonah Chang"]
 license = "MIT"
