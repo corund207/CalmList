@@ -1,6 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build:site"
+  "installCommand": "",
+  "buildCommand": "mkdir -p _moved && cp deploy/moved.html _moved/index.html",
+  "outputDirectory": "_moved",
+  "redirects": [
+    { "source": "/api/:path*", "destination": "https://calmlist.jonahchang.com/api/:path*", "permanent": true }
+  ],
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

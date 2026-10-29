@@ -1,4 +1,4 @@
-// Probes the service and records the result for the uptime numbers. Run by Vercel Cron and GitHub Actions.
+// Probes the service and records the result for the uptime numbers. The server runs it every 30 minutes.
 import { env, json } from './_env'
 
 const probe = async (url: string, headers: Record<string, string> = {}) => {
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   const results = {
     api: await probe(`${env.supabaseUrl}/rest/v1/`, key),
     auth: await probe(`${env.supabaseUrl}/auth/v1/health`, key),
-    app: await probe(`${new URL(req.url).origin}/app/`),
+    app: await probe(process.env.APP_URL ?? `${new URL(req.url).origin}/app/`),
   }
   const rows = Object.entries(results).map(([component, r]) => ({ component, ...r }))
   const headers = { apikey: env.serviceKey, authorization: `Bearer ${env.serviceKey}`, 'content-type': 'application/json' }

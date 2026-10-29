@@ -17,6 +17,7 @@
     "app:build": "tauri build",
     "app:ios": "tauri ios dev",
     "start": "npm run start --workspace server",
+    "deploy": "ssh admin@macserver-1 apps/calmlist/deploy/update.sh --force",
     "test": "npm test --workspace web && npm test --workspace server && npm run test:db",
     "typecheck": "npm run typecheck --workspace web && npm run typecheck --workspace server && tsc -p functions",
     "supabase:selfhost": "node scripts/supabase-selfhost.mjs",

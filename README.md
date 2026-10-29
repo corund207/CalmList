@@ -8,7 +8,7 @@ A calm, keyboard-first task manager inspired by Todoist.<br />
 Local-first in the browser, with free on-device AI, 48 themes, Claude and ChatGPT connectors,<br />
 Google Calendar sync, and sync through Supabase or a server you host yourself.
 
-[**Open the app**](https://corund207.github.io/CalmList/app/) · [**Website**](https://corund207.github.io/CalmList/) · [AI](#ai-free-by-default) · [Assistants](#ai-assistants-mcp) · [Apps](#mac-windows-and-ios-apps) · [Sync](#sync-options) · [Vercel](#hosting-on-vercel) · [Status](#service-status) · [Privacy](#privacy-licenses-and-compliance)
+[**Open the app**](https://calmlist.jonahchang.com/app/) · [**Website**](https://calmlist.jonahchang.com/) · [AI](#ai-free-by-default) · [Assistants](#ai-assistants-mcp) · [Apps](#install-it-as-an-app) · [Sync](#sync-options) · [Hosting](#hosting) · [Status](#service-status) · [Privacy](#privacy-licenses-and-compliance)
 
 [![CI and Pages](https://github.com/corund207/CalmList/actions/workflows/pages.yml/badge.svg)](https://github.com/corund207/CalmList/actions/workflows/pages.yml)
 ![Node 24](https://img.shields.io/badge/node-24-000000?labelColor=1d1d1f)
@@ -34,6 +34,7 @@ Google Calendar sync, and sync through Supabase or a server you host yourself.
 | **48 themes** | Dark, light, dynamic (follows the clock or the seasons), animated (aurora, starfield, synthwave, rain…) and niche (Nord, Dracula, Terminal, Pocket…), plus a custom accent colour. |
 | **Free AI** | Ramble, Task Assist and Filter Assist, running on-device at no cost, or with your own Claude, ChatGPT, Gemini or Grok key. |
 | **AI assistants** | Connect Claude, ChatGPT or any MCP client to read, add and complete tasks, with per-assistant tokens you can revoke. |
+| **Install anywhere** | Add it to the home screen on iPhone, iPad and Android, or install it from Chrome, Edge or Safari on Mac and Windows. It opens in its own window and starts offline. |
 | **Mac, Windows, iOS** | Native apps built with Tauri from the same code, a few MB each, syncing with the same account. |
 | **Sync your way** | Works offline in the browser. Connect Supabase Cloud, a self-hosted Supabase, or the bundled CalmList server; offline edits queue and send on reconnect. |
 | **Integrations** | Live sync of dated tasks to a dedicated *CalmList* Google Calendar, .ics export for Apple and Outlook, and Todoist import (CSV). |
@@ -96,7 +97,7 @@ Speech uses the browser's recognizer or a private on-device Whisper model. Keys 
 
 Claude, ChatGPT and any other [MCP](https://modelcontextprotocol.io) client can use your CalmList: "what's on today?", "add *renew passport* next Monday", "move everything tagged @errands to Saturday".
 
-1. Sign in with Supabase sync on a Vercel deployment (see [Hosting on Vercel](#hosting-on-vercel)).
+1. Sign in with Supabase sync at [calmlist.jonahchang.com](https://calmlist.jonahchang.com/app/) or your own deployment (see [Hosting](#hosting)).
 2. Open **Settings → Integrations → AI assistants**, pick your assistant and press **Connect**.
 3. Follow the instructions shown with the token:
 
@@ -112,6 +113,19 @@ Gemini and Grok support is planned.
 Tools: `list_tasks` (any filter query), `add_task` (with Quick Add syntax), `update_task`, `complete_task` (recurring tasks roll forward), `reopen_task`, `delete_task`, `list_projects`, `add_project`, plus `search` and `fetch` for ChatGPT's connector format.
 
 Each assistant gets its own token. Only a SHA-256 hash is stored, and you can revoke it at any time. The endpoint has no admin key: it passes the token to two Postgres functions, `calmlist_agent_read` and `calmlist_agent_write`, which resolve it to one user and touch only that user's rows. The database tests prove a token can never reach another account.
+
+## Install it as an app
+
+The web app is a Progressive Web App: install it from [calmlist.jonahchang.com/app](https://calmlist.jonahchang.com/app/) and it gets its own icon, opens in its own window without browser bars, and starts even without a connection.
+
+| Device | How |
+| --- | --- |
+| **iPhone, iPad** | Open it in Safari, tap **Share**, then **Add to Home Screen**. |
+| **Android** | Chrome menu → **Install app** (or **Add to Home screen**). |
+| **Mac** | Safari: **File → Add to Dock**. Chrome or Edge: the install icon in the address bar. |
+| **Windows, Linux, ChromeOS** | Chrome or Edge: the install icon in the address bar, or menu → **Install CalmList**. |
+
+A service worker caches the app shell on first visit and anything else (such as the on-device AI runtimes) the first time it's used. It never caches sync or AI requests. New versions are picked up on the next launch. Long-press the icon (or right-click it on desktop) for shortcuts to Today, Inbox and Upcoming.
 
 ## Mac, Windows and iOS apps
 
@@ -189,7 +203,7 @@ Re-running keeps the existing secrets. `--no-start` only writes the configuratio
 
 ### Pointing the hosted app at your Supabase
 
-In the repo's **Settings → Secrets and variables → Actions → Variables**, set `SUPABASE_URL` and `SUPABASE_ANON_KEY`. The Pages build then pre-fills the Supabase option. Also set the `SUPABASE_PROJECT_REF` variable and the `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` secrets, and CI will run `supabase db push` on every push to `main`.
+Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `deploy/.env` on the server ([Hosting](#hosting)); the build then pre-fills the Supabase option. To apply migrations from CI, set the Actions variable `SUPABASE_PROJECT_REF` and the secrets `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD`, and CI will run `supabase db push` on every push to `main`.
 
 ### CalmList server
 
@@ -206,10 +220,11 @@ Or from source: `npm install && npm run build && npm start` (copy `server/.env.e
 | --- | --- | --- |
 | `PORT` | `8787` | Port for the API and the bundled app |
 | `DATABASE_PATH` | `calmlist.db` (`/data/calmlist.db` in Docker) | SQLite file; keep it on a persistent volume |
-| `CORS_ORIGIN` | `*` | Comma-separated origins allowed to call the API, e.g. `https://corund207.github.io` |
-| `STATIC_DIR` | `../../web/dist` | Built web app to serve, relative to `server/src` |
+| `CORS_ORIGIN` | `*` | Comma-separated origins allowed to call the API, e.g. `https://calmlist.jonahchang.com` |
+| `STATIC_DIR` | `../../web/dist` (`_site` in Docker) | Built site or app to serve, relative to `server/src` |
+| `FUNCTIONS_DIR` | `../../_functions` | The bundled MCP, stats and status-check endpoints from `npm run build:site` |
 
-Put it behind HTTPS before using it for real accounts. To use it from the GitHub Pages app, set `CORS_ORIGIN=https://corund207.github.io`, then choose **Settings → Account & Sync → CalmList server** and enter its URL.
+Put it behind HTTPS before using it for real accounts. To use it from another origin, set `CORS_ORIGIN` to that origin, then choose **Settings → Account & Sync → CalmList server** and enter its URL.
 
 <details>
 <summary>API reference</summary>
@@ -239,24 +254,41 @@ Under Settings → **Integrations**:
 - **Todoist:** in Todoist, choose a project's *Export as a template → CSV*, then import one or many files. Sections, sub-tasks (from indentation), labels, priorities, dates and comments come across.
 - **JSON:** Settings → Data & Privacy exports and imports everything.
 
-## Hosting on Vercel
+## Hosting
 
-Vercel runs the website, the app and the three small functions (`/api/mcp`, `/api/stats`, `/api/status-check`) from one project. The free Hobby plan is enough.
+CalmList is served from one place: **[calmlist.jonahchang.com](https://calmlist.jonahchang.com/)**, a Docker container on `macserver-1`. The container is the CalmList server, which serves the landing page, the app at `/app/`, the three endpoints (`/api/mcp`, `/api/stats`, `/api/status-check`) and the sync API from one Node process. A Cloudflare Tunnel publishes it, so the machine opens no ports. The old addresses (GitHub Pages and `calmlist-steel.vercel.app`) only forward to the new one, first offering a download of any tasks kept in that browser.
 
-1. Import the repo at [vercel.com/new](https://vercel.com/new). `vercel.json` sets everything: `npm run build:site` writes Vercel's Build Output (static site, pre-bundled functions, security headers, a daily cron).
-2. Add the environment variables below, then deploy.
-3. In Supabase → Authentication → URL Configuration, set the Site URL to `https://<app>/app/` and add `https://<app>/app/**` to the redirect URLs, so confirmation and password-reset emails land in the app.
+Everything lives in [`deploy/`](deploy): `compose.yml` (the app and the tunnel), `.env.example`, `update.sh`, and a systemd timer that deploys every push to `main` within two minutes.
 
-| Variable | Needed for | Where it comes from |
+**First-time setup on macserver** (over Tailscale SSH, `ssh admin@macserver-1`, with Docker installed):
+
+```bash
+git clone https://github.com/corund207/CalmList.git ~/calmlist && cd ~/calmlist
+cp deploy/.env.example deploy/.env && nano deploy/.env        # values below
+deploy/update.sh --force                                       # build and start
+sudo cp deploy/calmlist-update.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now calmlist-update.timer
+```
+
+Then:
+
+1. **Tunnel:** in Cloudflare Zero Trust → Networks → Tunnels, create a tunnel, put its token in `CLOUDFLARE_TUNNEL_TOKEN`, and add the public hostname `calmlist.jonahchang.com` → `http://calmlist:8787`. Cloudflare creates the DNS record; the portfolio at `jonahchang.com` is untouched.
+2. **Supabase:** in Authentication → URL Configuration, set the Site URL to `https://calmlist.jonahchang.com/app/` and add `https://calmlist.jonahchang.com/app/**` to the redirect URLs, so confirmation and password-reset emails land in the app.
+
+| `deploy/.env` | Needed for | Where it comes from |
 | --- | --- | --- |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Sync, accounts, MCP | Supabase → Project Settings → API (the **anon public** key) |
-| `SUPABASE_SERVICE_ROLE_KEY` | `/api/stats` and `/api/status-check` only | Same page. Server-side only; never prefix it with `VITE_` |
-| `CRON_SECRET` | Status checks | Any long random string, e.g. `openssl rand -hex 32` |
-| `VITE_GOOGLE_CLIENT_ID` | Google Calendar | See below |
+| `PUBLIC_URL` | Links in emails, MCP replies, status checks | `https://calmlist.jonahchang.com` |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Reaching the internet | The tunnel's install command in Cloudflare Zero Trust |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Sync, accounts, MCP | Supabase → Project Settings → API (the **anon public** key) |
+| `SUPABASE_SERVICE_ROLE_KEY` | `/api/stats` and the status checks only | Same page. Stays on the server; never baked into the app |
+| `CRON_SECRET` | Status checks every 30 minutes | Any long random string, e.g. `openssl rand -hex 32` |
+| `GOOGLE_CLIENT_ID` | Google Calendar | See below |
+
+**Deploying:** push to `main` and the timer picks it up. To deploy at once, run `npm run deploy` from your computer (it runs `deploy/update.sh --force` over Tailscale SSH). `docker compose -f deploy/compose.yml logs -f calmlist` on the server shows the logs.
 
 **Every account is separate.** All accounts share one database, but row-level security scopes every row to its owner, both for the app (the signed-in user's JWT) and for assistants (the token resolves to one user inside Postgres). `npm run test:db` runs the migrations against an in-memory Postgres and checks that no account can read, change or delete another's data.
 
-**Security headers.** HSTS, `nosniff`, a strict referrer policy, a permissions policy and a Content-Security-Policy with no inline scripts. `connect-src` stays open because you can point the app at your own Supabase, Ollama or AI server.
+**Security headers.** The server sends HSTS, `nosniff`, a strict referrer policy, a permissions policy and a Content-Security-Policy with no inline scripts. `connect-src` stays open because you can point the app at your own Supabase, Ollama or AI server.
 
 ### Google Calendar
 
@@ -267,7 +299,7 @@ To turn it on:
 1. In [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Google Calendar API**.
 2. Set up the OAuth consent screen (External). Add the scope `.../auth/calendar.app.created` and link the Privacy Policy (`https://<app>/legal.html#privacy`).
 3. Create an **OAuth client ID** of type *Web application*, with your site (and `http://localhost:5173` for development) as authorized JavaScript origins.
-4. Set `VITE_GOOGLE_CLIENT_ID` in Vercel (and as the `GOOGLE_CLIENT_ID` Actions variable for Pages), then redeploy.
+4. Set `GOOGLE_CLIENT_ID` in `deploy/.env`, then run `npm run deploy`.
 
 While the app is in Google's *Testing* mode, only test users you add can connect. Publishing it for everyone requires Google's verification of the scope.
 
@@ -275,29 +307,29 @@ While the app is in Google's *Testing* mode, only test users you add can connect
 
 Live numbers from the hosted service. They are aggregate counts only; no one is identified.
 
-![Status](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.status&label=status&labelColor=1d1d1f&color=0071e3)
-![Uptime 30 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.uptime_30d_label&label=uptime%2030d&labelColor=1d1d1f&color=0071e3)
-![Uptime 7 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.uptime_7d_label&label=uptime%207d&labelColor=1d1d1f&color=0071e3)
-![Accounts](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.users_total&label=accounts&labelColor=1d1d1f&color=0071e3)
-![Active 30 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.active_30d&label=active%2030d&labelColor=1d1d1f&color=0071e3)
-![Syncing 7 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.syncing_7d&label=syncing%207d&labelColor=1d1d1f&color=0071e3)
-![Latency p50](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist-steel.vercel.app%2Fapi%2Fstats&query=%24.latency_p50&label=latency%20p50&suffix=%20ms&labelColor=1d1d1f&color=0071e3)
+![Status](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.jonahchang.com%2Fapi%2Fstats&query=%24.status&label=status&labelColor=1d1d1f&color=0071e3)
+![Uptime 30 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.jonahchang.com%2Fapi%2Fstats&query=%24.uptime_30d_label&label=uptime%2030d&labelColor=1d1d1f&color=0071e3)
+![Uptime 7 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.jonahchang.com%2Fapi%2Fstats&query=%24.uptime_7d_label&label=uptime%207d&labelColor=1d1d1f&color=0071e3)
+![Accounts](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.jonahchang.com%2Fapi%2Fstats&query=%24.users_total&label=accounts&labelColor=1d1d1f&color=0071e3)
+![Active 30 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.jonahchang.com%2Fapi%2Fstats&query=%24.active_30d&label=active%2030d&labelColor=1d1d1f&color=0071e3)
+![Syncing 7 days](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.jonahchang.com%2Fapi%2Fstats&query=%24.syncing_7d&label=syncing%207d&labelColor=1d1d1f&color=0071e3)
+![Latency p50](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fcalmlist.jonahchang.com%2Fapi%2Fstats&query=%24.latency_p50&label=latency%20p50&suffix=%20ms&labelColor=1d1d1f&color=0071e3)
 
 | Measure | Source |
 | --- | --- |
-| Status, uptime (24 h, 7 d, 30 d), median latency | `/api/status-check` probes the Supabase REST API, Supabase Auth and the app, every 30 minutes from GitHub Actions ([`status.yml`](.github/workflows/status.yml)) and daily from Vercel Cron. Results are kept 90 days. |
+| Status, uptime (24 h, 7 d, 30 d), median latency | The server probes the Supabase REST API, Supabase Auth and the app every 30 minutes (`/api/status-check`). Results are kept 90 days. |
 | Accounts, active in 1 / 7 / 30 days | Counts of `auth.users` and their last sign-in |
 | Syncing in 7 days | Accounts that changed any item in the last week |
-| Compute | Supabase Free plan: shared CPU and 500 MB RAM (Nano), 500 MB database, 5 GB egress; pauses after a week without traffic. Vercel Hobby for the site and functions. |
+| Compute | Supabase Free plan: shared CPU and 500 MB RAM (Nano), 500 MB database, 5 GB egress; pauses after a week without traffic. The site and endpoints run on macserver. |
 | Database version | `db_version` in the JSON |
 
-All of it is at [`/api/stats`](https://calmlist-steel.vercel.app/api/stats) as JSON, cached for five minutes. The numbers come from `calmlist_service_stats()`, which only the service role can call.
+All of it is at [`/api/stats`](https://calmlist.jonahchang.com/api/stats) as JSON, cached for five minutes. The numbers come from `calmlist_service_stats()`, which only the service role can call.
 
-For the status checks, set the Actions variable `STATUS_URL` to `https://<app>/api/status-check` and the secret `CRON_SECRET` to the same value as in Vercel.
+The status checks start once `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` are set in `deploy/.env`.
 
 ## Privacy, licenses and compliance
 
-- **No telemetry.** No analytics, error-reporting, ads or tracking SDKs, and no cookies beyond sign-in. Don't enable Vercel Web Analytics or Speed Insights without updating the privacy policy first.
+- **No telemetry.** No analytics, error-reporting, ads or tracking SDKs, and no cookies beyond sign-in. Don't enable Cloudflare Web Analytics without updating the privacy policy first.
 - **What leaves the device, and when.** The [Terms & Privacy page](site/legal.html) lists every destination: the sync service, AI providers you consent to, model downloads, Google Calendar and connected assistants. Settings → Data & Privacy repeats the summary in the app.
 - **GDPR.** Legal bases, recipients, transfers, retention and rights are documented. People can export everything (Art. 15/20), correct it (Art. 16) and delete their account instantly (Art. 17) in the app. Sign-up records the accepted policy version, when it was accepted, and age confirmation (16+).
 - **ePrivacy.** Only strictly necessary local storage, so no cookie banner is needed.
@@ -324,10 +356,11 @@ With both running, open **Settings → Account & Sync → CalmList server**, lea
 | `npm run dev` | Vite dev server for the web app |
 | `npm run dev:server` | CalmList server with file watching |
 | `npm run build` | Production build of the web app (`web/dist`) and server typecheck |
-| `npm run build:site` | The deployable site in `_site/` (landing page, app at `/app/`, `licenses.txt`); on Vercel also `.vercel/output` |
-| `npm start` | Runs the server, which also serves `web/dist` on the same port |
-| `npm test` | Web unit tests (Vitest), API tests and database isolation tests (`node:test`, PGlite) |
-| `npm run typecheck` | TypeScript across the workspaces and the Vercel functions |
+| `npm run build:site` | The deployable site in `_site/` (landing page, app at `/app/`, `licenses.txt`) and the bundled endpoints in `_functions/` |
+| `npm start` | Runs the server, which also serves `web/dist` on the same port (or the whole site with `STATIC_DIR=../../_site`) |
+| `npm run deploy` | Deploys `main` to macserver now, over Tailscale SSH |
+| `npm test` | Web unit tests (Vitest), API and site tests and database isolation tests (`node:test`, PGlite) |
+| `npm run typecheck` | TypeScript across the workspaces and the endpoints |
 | `npm run supabase:selfhost` | Sets up and starts a self-hosted Supabase for CalmList |
 | `npm run supabase:link` / `supabase:push` | Links a hosted Supabase project and applies the schema |
 
@@ -378,16 +411,18 @@ Example: `(today | overdue) & #Work & !@waiting`
 web/                 React 19 + Vite + TypeScript
   src/lib/           pure logic: date parser, quick add, recurrence, filters, .ics, Google Calendar, Todoist CSV (unit tested)
   src/ai/            Ramble, Task Assist, Filter Assist; rules, WebGPU, Ollama and cloud engines; speech
-  src/agent/         the MCP server: tools and JSON-RPC, shared by the Vercel function and tests
+  src/agent/         the MCP server: tools and JSON-RPC, shared by the /api/mcp endpoint and tests
   src/store/         Zustand store, sync providers (local, CalmList, Supabase), actions with undo
   src/themes/        48 themes, the palette → token engine, animated backdrops, the gallery
   src/components/    task rows, editor, pickers, dialogs, drag and drop, settings
   src/views/         Today, Upcoming, Project/Board, Filters & Labels, Completed, Search
-server/              Hono on Node 24, node:sqlite, runs TypeScript natively
-functions/           Vercel functions: /api/mcp, /api/stats, /api/status-check
+  sw.js              the service worker for the installed app (filled in by vite.config.ts)
+server/              Hono on Node 24, node:sqlite, runs TypeScript natively; serves the site, endpoints and sync API
+functions/           the endpoints /api/mcp, /api/stats, /api/status-check (web-standard handlers)
+deploy/              macserver: Docker Compose with a Cloudflare Tunnel, the auto-deploy timer, the old-address forwarder
 src-tauri/           the native shell for Windows, macOS and iOS (Tauri 2)
 supabase/            Supabase CLI config, migrations, and the user-isolation tests
-scripts/             build-site.mjs (site, licenses, Vercel output), supabase-selfhost.mjs
+scripts/             build-site.mjs (site, licenses, bundled endpoints), supabase-selfhost.mjs
 site/                landing page, Terms & Privacy
 ```
 
@@ -399,29 +434,30 @@ The UI follows the [Jonah Chang design system](https://claude.ai/artifact/FcShiF
 
 | Piece | Where | State |
 | --- | --- | --- |
-| Website and app | [corund207.github.io/CalmList](https://corund207.github.io/CalmList/) | Deploys on every push to `main` |
+| Website, app, MCP, stats | [calmlist.jonahchang.com](https://calmlist.jonahchang.com/) on `macserver-1` | Deploys every push to `main` within two minutes |
 | Supabase project | `calmlist` in the PersonalProgects org, us-east-2 (`ddvtufcbrvzjislojlqp`) | Schema applied, row-level security and realtime on |
-| Hosted app → Supabase | Actions variables `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Set: the Sync tab comes pre-filled |
-| Vercel (site, app, MCP, stats) | [calmlist-steel.vercel.app](https://calmlist-steel.vercel.app/) | Deploys on every push to `main`; Supabase URL and anon key set |
+| Hosted app → Supabase | `SUPABASE_URL`, `SUPABASE_ANON_KEY` in `deploy/.env` | Set: the Sync tab comes pre-filled |
+| Old addresses | [corund207.github.io/CalmList](https://corund207.github.io/CalmList/), [calmlist-steel.vercel.app](https://calmlist-steel.vercel.app/) | Forward to calmlist.jonahchang.com |
 | Migrations | `supabase/migrations/` | All applied to the hosted project |
 
 ## What you still need to do
 
-**For the new features:**
+**For the move to calmlist.jonahchang.com:**
 
-- **Vercel secrets:** in the [project settings](https://vercel.com/jonahchang207s-projects/calmlist/settings/environment-variables), add `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) and `CRON_SECRET` (a random string), then redeploy. Add the same `CRON_SECRET` as a GitHub Actions secret. Until then `/api/stats` answers 503 and the badges show nothing.
-- **Supabase redirect URLs:** in [Authentication → URL Configuration](https://supabase.com/dashboard/project/ddvtufcbrvzjislojlqp/auth/url-configuration), add `https://calmlist-steel.vercel.app/app/**`, so confirmation and reset emails work from the Vercel app.
-- **Google Calendar:** create the OAuth client and set `VITE_GOOGLE_CLIENT_ID` ([steps](#google-calendar)).
+- **Secrets on macserver:** add `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) and `CRON_SECRET` (a random string) to `deploy/.env`, then `npm run deploy`. Until then `/api/stats` answers 503 and the badges show nothing.
+- **Supabase redirect URLs:** in [Authentication → URL Configuration](https://supabase.com/dashboard/project/ddvtufcbrvzjislojlqp/auth/url-configuration), set the Site URL to `https://calmlist.jonahchang.com/app/` and add `https://calmlist.jonahchang.com/app/**`, so confirmation and reset emails open the app.
+- **AI assistants:** reconnect Claude, ChatGPT or other MCP clients with `https://calmlist.jonahchang.com/api/mcp`. The old Vercel address forwards, but not every client follows redirects.
+- **Google Calendar:** create the OAuth client with `https://calmlist.jonahchang.com` as an authorized origin and set `GOOGLE_CLIENT_ID` ([steps](#google-calendar)).
 - **Privacy contact:** the GDPR needs a way to reach you privately. Add a contact email to `site/legal.html` (it currently points to GitHub issues). If you target Germany or Austria, also add an Impressum with a postal address.
 - **EU data residency (optional):** the Supabase project is in us-east-2. For EU users, a project in an EU region (e.g. Frankfurt) avoids the transfer to the US entirely.
 
 **From before:**
 
-1. **Create your account.** Open the [app](https://corund207.github.io/CalmList/app/) → **Settings → Account & Sync → Supabase** → *Create account*. New accounts get a confirmation email; after clicking it, come back and sign in.
+1. **Create your account.** Open the [app](https://calmlist.jonahchang.com/app/) → **Settings → Account & Sync → Supabase** → *Create account*. New accounts get a confirmation email; after clicking it, come back and sign in.
 2. **Optional: skip email confirmation.** Supabase's built-in email sender is rate-limited, so for a personal instance you may prefer turning off *Confirm email* under Authentication → Providers → Email in the [dashboard](https://supabase.com/dashboard/project/ddvtufcbrvzjislojlqp/auth/providers).
 3. **Optional: automatic migrations.** Add the Actions variable `SUPABASE_PROJECT_REF=ddvtufcbrvzjislojlqp` and the secrets `SUPABASE_ACCESS_TOKEN` (from [account tokens](https://supabase.com/dashboard/account/tokens)) and `SUPABASE_DB_PASSWORD` (in your local, gitignored `supabase/.env.local`). CI will then push new migrations on every merge to `main`.
 
-**Self-hosting instead:** install Docker, run `npm run supabase:selfhost -- --url https://your-domain`, put HTTPS in front of port 8000, and paste the printed URL and anon key into the app. Or deploy the CalmList server image with a volume for `/data`, set `CORS_ORIGIN=https://corund207.github.io`, and choose **Settings → Account & Sync → CalmList server**.
+**Self-hosting instead:** install Docker, run `npm run supabase:selfhost -- --url https://your-domain`, put HTTPS in front of port 8000, and paste the printed URL and anon key into the app. Or run your own copy of the CalmList server image (see [Hosting](#hosting)) and choose **Settings → Account & Sync → CalmList server**.
 
 ## License
 

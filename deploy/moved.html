@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>CalmList has moved</title>
+  <link rel="canonical" href="https://calmlist.jonahchang.com/" />
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: #000; color: #f5f5f7; font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+    main { max-width: 520px; text-align: center; }
+    h1 { margin: 0 0 12px; font-size: 32px; font-weight: 600; letter-spacing: -0.03em; }
+    p { margin: 0 0 12px; color: #d2d2d7; }
+    a { color: #2997ff; }
+    .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin-top: 24px; }
+    .btn { min-height: 42px; padding: 0 18px; display: inline-flex; align-items: center; border: 1px solid #0071e3; border-radius: 999px; background: #0071e3; color: #fff; font: inherit; font-size: 14px; text-decoration: none; cursor: pointer; }
+    .btn.secondary { background: none; border-color: rgba(245, 245, 247, 0.42); }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>CalmList has moved</h1>
+    <p>It now lives at <a id="go-link" href="https://calmlist.jonahchang.com/">calmlist.jonahchang.com</a>.</p>
+    <div id="local" hidden>
+      <p>This browser still has <strong id="count"></strong> kept on this device at the old address. Download them, then in the new app choose Settings → Data &amp; Privacy → Import JSON.</p>
+      <div class="actions">
+        <button class="btn" id="download" type="button">Download my tasks</button>
+        <a class="btn secondary" id="go" href="https://calmlist.jonahchang.com/">Go to the new address</a>
+      </div>
+    </div>
+  </main>
+  <script>
+    // The old addresses (GitHub Pages and Vercel) forward here, keeping the page and task link.
+    // Tasks kept on this device live in this origin's storage, so offer them for download before leaving.
+    var target = 'https://calmlist.jonahchang.com' + location.pathname.replace(/^\/CalmList/i, '') + location.search + location.hash
+    document.getElementById('go').href = document.getElementById('go-link').href = target
+    var data = null
+    try { data = JSON.parse(localStorage.getItem('calmlist:data') || 'null') } catch (e) {}
+    var tasks = data && data.tasks ? Object.keys(data.tasks).length : 0
+    if (!tasks) location.replace(target)
+    else {
+      document.getElementById('count').textContent = tasks === 1 ? '1 task' : tasks + ' tasks'
+      document.getElementById('local').hidden = false
+      document.getElementById('download').onclick = function () {
+        var blob = new Blob([JSON.stringify({ app: 'calmlist', version: 1, exportedAt: new Date().toISOString(), data: data }, null, 2)], { type: 'application/json' })
+        var a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = 'calmlist-' + new Date().toISOString().slice(0, 10) + '.json'
+        a.click()
+      }
+    }
+  </script>
+</body>
+</html>

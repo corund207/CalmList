@@ -4,7 +4,7 @@
 export const isNative = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
 /** The hosted web app, used for links that must work outside this device (emails, shared task links). */
-export const WEB_APP_URL = (import.meta.env.VITE_WEB_APP_URL as string | undefined) || 'https://calmlist-steel.vercel.app/app/'
+export const WEB_APP_URL = (import.meta.env.VITE_WEB_APP_URL as string | undefined) || 'https://calmlist.jonahchang.com/app/'
 
 /** This app's shareable address without a route: the page itself in a browser, the hosted app in the native shell. */
 export const publicAppUrl = () => (isNative ? WEB_APP_URL : `${location.origin}${location.pathname}`)

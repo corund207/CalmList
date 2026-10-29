@@ -10,6 +10,10 @@
   <meta property="og:description" content="Plan less. Finish more. A calm, keyboard-first task manager." />
   <meta property="og:image" content="assets/today.png" />
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <!-- Adding this page to a home screen installs the app itself. -->
+  <link rel="manifest" href="app/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="app/icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="CalmList" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -145,6 +149,7 @@ npm run supabase:push</code></pre>
         <a class="btn btn-inverse" href="app/">Open the App</a>
         <a class="btn btn-secondary" href="https://github.com/corund207/CalmList#readme" rel="noopener">Read the Docs</a>
       </div>
+      <p class="install-note">Install it like an app. On iPhone and iPad, open the app in Safari, tap Share, then <strong>Add to Home Screen</strong>. On Android, Windows and Mac, choose <strong>Install</strong> in Chrome or Edge, or <strong>Add to Dock</strong> in Safari.</p>
     </section>
   </main>
 

@@ -1,4 +1,4 @@
-// Shared by the Vercel functions. Files starting with "_" are helpers, not endpoints.
+// Shared by the endpoints the server mounts at /api/<name>. Files starting with "_" are helpers, not endpoints.
 
 export const env = {
   supabaseUrl: (process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, ''),

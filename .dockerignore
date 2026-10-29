@@ -3,3 +3,7 @@ node_modules
 web/dist
 *.db
 .git
+_site
+_functions
+.vercel
+src-tauri/target

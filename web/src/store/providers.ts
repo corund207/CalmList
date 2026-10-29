@@ -124,7 +124,7 @@ export interface Credentials {
 }
 
 /** Bumped when the Terms or Privacy Policy change materially; stored with each sign-up. */
-export const POLICY_VERSION = '2026-09-23'
+export const POLICY_VERSION = '2026-10-29'
 
 /** This app's address without any route, for email links (the hosted app when running natively). */
 export const appUrl = publicAppUrl

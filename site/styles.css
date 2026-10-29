@@ -104,6 +104,8 @@ code { font-family: var(--font-mono); font-size: 0.88em; color: var(--foreground
 
 .closing { position: relative; overflow: hidden; width: min(calc(100% - 36px), 1720px); margin: 18px auto; padding: clamp(100px, 12vw, 180px) var(--gutter); border-radius: 28px; background: var(--surface); text-align: center; }
 .closing > :not(canvas) { position: relative; z-index: 1; }
+.install-note { max-width: 560px; margin: 30px auto 0; color: var(--foreground-soft); font-size: 14px; line-height: 1.5; }
+.install-note strong { color: var(--foreground-bright); font-weight: 520; }
 .dots { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .6; }
 @media (max-width: 800px) { .closing { width: calc(100% - 18px); border-radius: 20px; } }
 

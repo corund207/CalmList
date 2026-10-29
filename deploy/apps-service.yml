@@ -1,0 +1,36 @@
+# CalmList's service in macserver's public apps project (~/apps/compose.yml, project "macserver-apps").
+# Paste this under `services:` there. The repo is checked out at ~/apps/calmlist, and the apps tunnel
+# publishes it with the Cloudflare public hostname calmlist.jonahchang.com -> http://calmlist:8787.
+# Settings come from ~/apps/.env (mode 0600); see apps-env.example.
+  calmlist:
+    build:
+      context: ./calmlist
+      args:
+        VITE_SUPABASE_URL: ${CALMLIST_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${CALMLIST_SUPABASE_ANON_KEY:-}
+        VITE_GOOGLE_CLIENT_ID: ${CALMLIST_GOOGLE_CLIENT_ID:-}
+        VITE_WEB_APP_URL: https://calmlist.jonahchang.com/app/
+    image: macserver-apps/calmlist:local
+    restart: unless-stopped
+    environment:
+      APP_URL: https://calmlist.jonahchang.com/app/
+      SUPABASE_URL: ${CALMLIST_SUPABASE_URL:-}
+      SUPABASE_ANON_KEY: ${CALMLIST_SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${CALMLIST_SUPABASE_SERVICE_ROLE_KEY:-}
+      CRON_SECRET: ${CALMLIST_CRON_SECRET:-}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - calmlist-data:/data
+    networks: [apps]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# And under the top-level `volumes:`:
+#   calmlist-data:

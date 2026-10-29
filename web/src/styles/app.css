@@ -35,7 +35,7 @@
 .nav-group-head { display: flex; align-items: center; justify-content: space-between; min-height: 32px; padding: 0 4px 0 10px; color: var(--muted); }
 .nav-group-head .icon-btn { width: 28px; height: 28px; }
 
-.sidebar-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); color: var(--muted); }
+.sidebar-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); color: var(--muted); }
 .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); display: inline-block; margin-right: 7px; vertical-align: 1px; }
 .sync-dot[data-status="synced"] { background: var(--accent); }
 .sync-dot[data-status="syncing"] { background: var(--accent-bright); animation: pulse 1s ease-in-out infinite alternate; }

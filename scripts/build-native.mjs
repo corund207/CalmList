@@ -3,7 +3,7 @@
 // deployment, since the native app has no website of its own.
 import { execSync } from 'node:child_process'
 
-const HOSTED = (process.env.CALMLIST_HOSTED_URL ?? 'https://calmlist-steel.vercel.app').replace(/\/+$/, '')
+const HOSTED = (process.env.CALMLIST_HOSTED_URL ?? 'https://calmlist.jonahchang.com').replace(/\/+$/, '')
 
 execSync('npm run build --workspace web', {
   stdio: 'inherit',

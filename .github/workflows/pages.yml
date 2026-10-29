@@ -1,4 +1,4 @@
-name: CI and Pages
+name: CI and Pages redirect
 
 on:
   push:
@@ -28,30 +28,18 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+  # CalmList is served only from calmlist.jonahchang.com (macserver, see deploy/). Pages keeps the old
+  # address working: every page forwards there, after offering tasks kept in this browser for download.
   build:
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      # The landing page at the root, the app (local-only unless Supabase is set) at /app/, license notices.
-      - run: npm run build:site
-        env:
-          # Optional: point the hosted app at your Supabase project (Settings → Secrets and variables → Actions → Variables).
-          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
-          # Optional: the MCP endpoint of your Vercel deployment, e.g. https://calmlist.vercel.app/api/mcp
-          VITE_MCP_URL: ${{ vars.MCP_URL }}
-          # Optional: Google OAuth web client id for the Google Calendar connector.
-          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+      - run: mkdir _moved && cp deploy/moved.html _moved/index.html && cp deploy/moved.html _moved/404.html
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: _moved
 
   # Applies supabase/migrations to your hosted project when SUPABASE_PROJECT_REF is set.
   migrate:

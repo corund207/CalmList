@@ -9,3 +9,4 @@ dist/
 _site/
 supabase-selfhost/
 .vercel/
+_functions/

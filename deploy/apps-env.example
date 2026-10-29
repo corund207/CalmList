@@ -1,0 +1,13 @@
+# CalmList's lines in macserver's ~/apps/.env (mode 0600, never in git).
+
+# Supabase (Project Settings -> API). URL and anon key are public; the service-role key is secret and
+# only powers /api/stats and the uptime checks.
+CALMLIST_SUPABASE_URL=https://ddvtufcbrvzjislojlqp.supabase.co
+CALMLIST_SUPABASE_ANON_KEY=
+CALMLIST_SUPABASE_SERVICE_ROLE_KEY=
+
+# Any long random string (openssl rand -hex 32). Turns on the 30-minute status checks.
+CALMLIST_CRON_SECRET=
+
+# Optional: Google OAuth web client id for the Google Calendar connector.
+CALMLIST_GOOGLE_CLIENT_ID=

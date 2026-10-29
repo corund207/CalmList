@@ -7,6 +7,12 @@
     <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="manifest" href="./manifest.webmanifest" />
+    <!-- Add to Home Screen on iOS and iPadOS: opens full screen, with its own icon and name. -->
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="CalmList" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>CalmList</title>
     <!-- External rather than inline, so the Content-Security-Policy needs no exceptions. -->
     <script src="./boot.js"></script>
