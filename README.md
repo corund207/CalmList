@@ -203,7 +203,7 @@ Re-running keeps the existing secrets. `--no-start` only writes the configuratio
 
 ### Pointing the hosted app at your Supabase
 
-Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `deploy/.env` on the server ([Hosting](#hosting)); the build then pre-fills the Supabase option. To apply migrations from CI, set the Actions variable `SUPABASE_PROJECT_REF` and the secrets `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD`, and CI will run `supabase db push` on every push to `main`.
+Set `CALMLIST_SUPABASE_URL` and `CALMLIST_SUPABASE_ANON_KEY` in `~/apps/.env` on the server ([Hosting](#hosting)); the build then pre-fills the Supabase option. To apply migrations from CI, set the Actions variable `SUPABASE_PROJECT_REF` and the secrets `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD`, and CI will run `supabase db push` on every push to `main`.
 
 ### CalmList server
 
@@ -256,35 +256,30 @@ Under Settings → **Integrations**:
 
 ## Hosting
 
-CalmList is served from one place: **[calmlist.jonahchang.com](https://calmlist.jonahchang.com/)**, a Docker container on `macserver-1`. The container is the CalmList server, which serves the landing page, the app at `/app/`, the three endpoints (`/api/mcp`, `/api/stats`, `/api/status-check`) and the sync API from one Node process. A Cloudflare Tunnel publishes it, so the machine opens no ports. The old addresses (GitHub Pages and `calmlist-steel.vercel.app`) only forward to the new one, first offering a download of any tasks kept in that browser.
+CalmList is served from one place: **[calmlist.jonahchang.com](https://calmlist.jonahchang.com/)**, on `macserver-1`. It runs as the `calmlist` service of macserver's public apps project (`~/apps/compose.yml`, alongside the other sites), read-only and without privileges, on a network that can't reach the server's own Supabase. The container is the CalmList server: one Node process serving the landing page, the app at `/app/`, the three endpoints (`/api/mcp`, `/api/stats`, `/api/status-check`) and the sync API. The apps Cloudflare Tunnel publishes it, so nothing listens on the network. The old addresses (GitHub Pages and `calmlist-steel.vercel.app`) only forward to the new one, first offering a download of any tasks kept in that browser.
 
-Everything lives in [`deploy/`](deploy): `compose.yml` (the app and the tunnel), `.env.example`, `update.sh`, and a systemd timer that deploys every push to `main` within two minutes.
+[`deploy/`](deploy) has the service definition (`apps-service.yml`), the settings template (`apps-env.example`), `update.sh`, and the old-address forwarder (`moved.html`).
 
-**First-time setup on macserver** (over Tailscale SSH, `ssh admin@macserver-1`, with Docker installed):
+**How it's set up on macserver** (over Tailscale SSH, `ssh admin@macserver-1`):
 
 ```bash
-git clone https://github.com/corund207/CalmList.git ~/calmlist && cd ~/calmlist
-cp deploy/.env.example deploy/.env && nano deploy/.env        # values below
-deploy/update.sh --force                                       # build and start
-sudo cp deploy/calmlist-update.{service,timer} /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now calmlist-update.timer
+git clone https://github.com/corund207/CalmList.git ~/apps/calmlist
+# add deploy/apps-service.yml to ~/apps/compose.yml, and deploy/apps-env.example's lines to ~/apps/.env
+~/apps/calmlist/deploy/update.sh --force          # build and start
+crontab -e                                        # deploy each push to main:
+# */2 * * * * $HOME/apps/calmlist/deploy/update.sh >> $HOME/apps/calmlist-deploy.log 2>&1
 ```
 
-Then:
+In Cloudflare Zero Trust → Networks → Tunnels → **macserver-apps** → Public hostnames, `calmlist.jonahchang.com` points to `http://calmlist:8787`; Cloudflare keeps the DNS record. The portfolio at `jonahchang.com` is separate. In Supabase → Authentication → URL Configuration, the Site URL is `https://calmlist.jonahchang.com/app/`, with `https://calmlist.jonahchang.com/app/**` among the redirect URLs, so confirmation and password-reset emails land in the app.
 
-1. **Tunnel:** in Cloudflare Zero Trust → Networks → Tunnels, create a tunnel, put its token in `CLOUDFLARE_TUNNEL_TOKEN`, and add the public hostname `calmlist.jonahchang.com` → `http://calmlist:8787`. Cloudflare creates the DNS record; the portfolio at `jonahchang.com` is untouched.
-2. **Supabase:** in Authentication → URL Configuration, set the Site URL to `https://calmlist.jonahchang.com/app/` and add `https://calmlist.jonahchang.com/app/**` to the redirect URLs, so confirmation and password-reset emails land in the app.
-
-| `deploy/.env` | Needed for | Where it comes from |
+| `~/apps/.env` | Needed for | Where it comes from |
 | --- | --- | --- |
-| `PUBLIC_URL` | Links in emails, MCP replies, status checks | `https://calmlist.jonahchang.com` |
-| `CLOUDFLARE_TUNNEL_TOKEN` | Reaching the internet | The tunnel's install command in Cloudflare Zero Trust |
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Sync, accounts, MCP | Supabase → Project Settings → API (the **anon public** key) |
-| `SUPABASE_SERVICE_ROLE_KEY` | `/api/stats` and the status checks only | Same page. Stays on the server; never baked into the app |
-| `CRON_SECRET` | Status checks every 30 minutes | Any long random string, e.g. `openssl rand -hex 32` |
-| `GOOGLE_CLIENT_ID` | Google Calendar | See below |
+| `CALMLIST_SUPABASE_URL`, `CALMLIST_SUPABASE_ANON_KEY` | Sync, accounts, MCP | Supabase → Project Settings → API (the **anon public** key) |
+| `CALMLIST_SUPABASE_SERVICE_ROLE_KEY` | `/api/stats` and the status checks only | Same page. Stays on the server; never baked into the app |
+| `CALMLIST_CRON_SECRET` | Status checks every 30 minutes | Any long random string, e.g. `openssl rand -hex 32` |
+| `CALMLIST_GOOGLE_CLIENT_ID` | Google Calendar | See below |
 
-**Deploying:** push to `main` and the timer picks it up. To deploy at once, run `npm run deploy` from your computer (it runs `deploy/update.sh --force` over Tailscale SSH). `docker compose -f deploy/compose.yml logs -f calmlist` on the server shows the logs.
+**Deploying:** push to `main` and cron picks it up within two minutes. To deploy at once, run `npm run deploy` from your computer (it runs `update.sh --force` over Tailscale SSH). Logs: `docker compose -f ~/apps/compose.yml logs -f calmlist`.
 
 **Every account is separate.** All accounts share one database, but row-level security scopes every row to its owner, both for the app (the signed-in user's JWT) and for assistants (the token resolves to one user inside Postgres). `npm run test:db` runs the migrations against an in-memory Postgres and checks that no account can read, change or delete another's data.
 
@@ -299,7 +294,7 @@ To turn it on:
 1. In [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Google Calendar API**.
 2. Set up the OAuth consent screen (External). Add the scope `.../auth/calendar.app.created` and link the Privacy Policy (`https://<app>/legal.html#privacy`).
 3. Create an **OAuth client ID** of type *Web application*, with your site (and `http://localhost:5173` for development) as authorized JavaScript origins.
-4. Set `GOOGLE_CLIENT_ID` in `deploy/.env`, then run `npm run deploy`.
+4. Set `CALMLIST_GOOGLE_CLIENT_ID` in `~/apps/.env` on macserver, then run `npm run deploy`.
 
 While the app is in Google's *Testing* mode, only test users you add can connect. Publishing it for everyone requires Google's verification of the scope.
 
@@ -325,7 +320,7 @@ Live numbers from the hosted service. They are aggregate counts only; no one is 
 
 All of it is at [`/api/stats`](https://calmlist.jonahchang.com/api/stats) as JSON, cached for five minutes. The numbers come from `calmlist_service_stats()`, which only the service role can call.
 
-The status checks start once `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` are set in `deploy/.env`.
+The status checks start once `CALMLIST_CRON_SECRET` and `CALMLIST_SUPABASE_SERVICE_ROLE_KEY` are set in `~/apps/.env` on macserver.
 
 ## Privacy, licenses and compliance
 
@@ -436,7 +431,7 @@ The UI follows the [Jonah Chang design system](https://claude.ai/artifact/FcShiF
 | --- | --- | --- |
 | Website, app, MCP, stats | [calmlist.jonahchang.com](https://calmlist.jonahchang.com/) on `macserver-1` | Deploys every push to `main` within two minutes |
 | Supabase project | `calmlist` in the PersonalProgects org, us-east-2 (`ddvtufcbrvzjislojlqp`) | Schema applied, row-level security and realtime on |
-| Hosted app → Supabase | `SUPABASE_URL`, `SUPABASE_ANON_KEY` in `deploy/.env` | Set: the Sync tab comes pre-filled |
+| Hosted app → Supabase | `CALMLIST_SUPABASE_URL`, `CALMLIST_SUPABASE_ANON_KEY` in `~/apps/.env` | Set: the Sync tab comes pre-filled |
 | Old addresses | [corund207.github.io/CalmList](https://corund207.github.io/CalmList/), [calmlist-steel.vercel.app](https://calmlist-steel.vercel.app/) | Forward to calmlist.jonahchang.com |
 | Migrations | `supabase/migrations/` | All applied to the hosted project |
 
@@ -444,7 +439,7 @@ The UI follows the [Jonah Chang design system](https://claude.ai/artifact/FcShiF
 
 **For the move to calmlist.jonahchang.com:**
 
-- **Secrets on macserver:** add `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) and `CRON_SECRET` (a random string) to `deploy/.env`, then `npm run deploy`. Until then `/api/stats` answers 503 and the badges show nothing.
+- **Service-role key on macserver:** set `CALMLIST_SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) in `~/apps/.env`, then `npm run deploy`. `CALMLIST_CRON_SECRET` is already set. Until then `/api/stats` answers 503 and the badges show nothing.
 - **Supabase redirect URLs:** in [Authentication → URL Configuration](https://supabase.com/dashboard/project/ddvtufcbrvzjislojlqp/auth/url-configuration), set the Site URL to `https://calmlist.jonahchang.com/app/` and add `https://calmlist.jonahchang.com/app/**`, so confirmation and reset emails open the app.
 - **AI assistants:** reconnect Claude, ChatGPT or other MCP clients with `https://calmlist.jonahchang.com/api/mcp`. The old Vercel address forwards, but not every client follows redirects.
 - **Google Calendar:** create the OAuth client with `https://calmlist.jonahchang.com` as an authorized origin and set `GOOGLE_CLIENT_ID` ([steps](#google-calendar)).
