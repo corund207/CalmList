@@ -29,9 +29,19 @@ const FILLER = /^(?:(?:and|also|then|so|oh|um+|uh+|okay|ok|right|plus)[,\s]+)*(?
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
+/**
+ * Periods that don't end a sentence: "3 p.m." becomes "3 pm" (and "3 pm." before a capital or at the end),
+ * "Dr. Lee" becomes "Dr Lee". Speech engines write both, and a split there would cut a task in half.
+ */
+export const unperiod = (text: string) =>
+  text
+    .replace(/\b([aApP])\.\s?[mM]\.(?=\s+[A-Z]|\s*$)/g, (_, h: string) => `${h.toLowerCase()}m.`)
+    .replace(/\b([aApP])\.\s?[mM]\b\.?/g, (_, h: string) => `${h.toLowerCase()}m`)
+    .replace(/\b(Mr|Mrs|Ms|Dr|Prof|St)\.(?=\s)/g, '$1')
+
 /** Splits a brain dump into tasks with the Quick Add parser: sentences, "and then", "also", new lines. */
 export const rambleWithRules = (text: string, ws: Workspace): Draft[] =>
-  text
+  unperiod(text)
     .split(/(?:[.!?;\n]+|\s+(?:and then|and also|also|then|after that|plus)\s+|,\s*(?=(?:i\s+(?:need|have|want|should)|remember|don'?t forget|call|email|buy|book|pay|send|finish|write|pick up)\b))/i)
     .map((s) => s.trim().replace(FILLER, '').trim())
     .filter((s) => s.split(/\s+/).length >= 2 || /\w{4,}/.test(s))

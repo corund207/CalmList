@@ -159,7 +159,7 @@ export function AiSettings() {
         </div>
         <span className="form-hint">
           {speech === 'browser'
-            ? 'Live words as you talk. In Chrome and Edge the browser sends audio to its vendor’s speech service; Safari can process it on device.'
+            ? 'Live words as you talk. In Chrome and Edge the browser sends audio to its vendor’s speech service; Safari can process it on device. Where the browser can’t (an installed iPhone app, the Windows app, offline), Ramble switches to Whisper by itself.'
             : 'Fully private: audio never leaves this device. The model downloads once from Hugging Face; text appears when you stop.'}
         </span>
       </div>

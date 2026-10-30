@@ -2,7 +2,7 @@ import { Loader2, Mic, Square, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { aiByline, aiContext, workspace } from '../ai/context'
 import { ramble, rambleWithRules, type Draft } from '../ai/features'
-import { browserSpeechAvailable, listenWithBrowser, recordForWhisper, type Listener } from '../ai/speech'
+import { browserSpeechAvailable, listenWithBrowser, recordForWhisper, SpeechUnavailable, type Listener, type Recording } from '../ai/speech'
 import { formatDue } from '../lib/dates'
 import { parseDate } from '../lib/parse'
 import type { Priority } from '../lib/types'
@@ -14,19 +14,27 @@ import { Modal } from './Modal'
 
 type Phase = 'idle' | 'listening' | 'transcribing' | 'thinking'
 
+const join = (...parts: string[]) => parts.filter(Boolean).join(' ')
+const clock = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`
+
 /** Speak or type a brain dump; CalmList turns it into tasks you review before adding. */
 export function RambleDialog() {
   const { close, toast, open } = useUI()
-  const { ai, speech, whisperModel } = usePrefs()
+  const { ai, speech, whisperModel, set } = usePrefs()
   const data = useStore((s) => s.data)
   const [text, setText] = useState('')
   const [interim, setInterim] = useState('')
   const [drafts, setDrafts] = useState<(Draft & { keep: boolean })[]>([])
   const [phase, setPhase] = useState<Phase>('idle')
   const [status, setStatus] = useState('')
+  const [note, setNote] = useState('')
   const [error, setError] = useState('')
+  const [startedAt, setStartedAt] = useState(0)
+  const [now, setNow] = useState(0)
   const listener = useRef<Listener | null>(null)
-  const recorder = useRef<{ stop(): Promise<string> } | null>(null)
+  const recorder = useRef<Recording | null>(null)
+  // What was already in the box when this take started; what's heard is added after it.
+  const before = useRef('')
   const local = ai.provider === 'rules'
 
   // With the built-in rules, tasks appear live as you speak or type.
@@ -34,7 +42,17 @@ export function RambleDialog() {
     if (local) setDrafts(rambleWithRules(`${text} ${interim}`, workspace()).map((d) => ({ ...d, keep: true })))
   }, [text, interim, local])
 
-  useEffect(() => () => listener.current?.stop(), [])
+  useEffect(() => {
+    if (phase !== 'listening') return
+    const t = setInterval(() => setNow(Date.now()), 500)
+    return () => clearInterval(t)
+  }, [phase])
+
+  // Closing the dialog turns the microphone off.
+  useEffect(() => () => {
+    void listener.current?.stop()
+    recorder.current?.cancel()
+  }, [])
 
   const extract = async (source = text) => {
     if (local || !source.trim()) return
@@ -51,49 +69,58 @@ export function RambleDialog() {
     }
   }
 
+  const progress = (t: string, f?: number) => setStatus(f !== undefined ? `${t} ${Math.round(f * 100)}%` : t)
+
+  const listening = (at = Date.now()) => (setStartedAt(at), setNow(at), setPhase('listening'))
+
+  const startWhisper = async () => {
+    recorder.current = await recordForWhisper(whisperModel, { onProgress: progress })
+    listening()
+  }
+
   const start = async () => {
     setError('')
+    setNote('')
+    before.current = text.trim()
     try {
-      if (speech === 'whisper' || !browserSpeechAvailable()) {
-        recorder.current = await recordForWhisper(whisperModel, { onProgress: (t, f) => setStatus(f !== undefined ? `${t} ${Math.round(f * 100)}%` : t) })
-        setPhase('listening')
-      } else {
-        const base = text ? `${text.trim()} ` : ''
-        listener.current = listenWithBrowser({
-          onText: (final, live) => (setText(base + final), setInterim(live)),
-          onEnd: () => setInterim(''),
-          onError: (m) => setError(m),
-        })
-        setPhase('listening')
-      }
+      if (speech === 'whisper' || !browserSpeechAvailable()) return await startWhisper()
+      listener.current = listenWithBrowser({
+        onText: (heard, live) => (setText(join(before.current, heard)), setInterim(live)),
+        onError: (e) => {
+          listener.current = null
+          setInterim('')
+          if (!(e instanceof SpeechUnavailable)) return (setError(e.message), setPhase('idle'))
+          // No speech service here (an installed iPhone app, the Windows app, offline): carry on with Whisper.
+          setNote(`${e.message} Recording on this device with Whisper instead.`)
+          if (e.lasting) set({ speech: 'whisper' })
+          startWhisper().catch((err: Error) => (setError(err.message), setPhase('idle')))
+        },
+      })
+      listening()
     } catch (e) {
       setError((e as Error).message)
+      setPhase('idle')
     }
   }
 
   const stop = async () => {
-    if (listener.current) {
-      listener.current.stop()
-      listener.current = null
+    const take = listener.current ?? recorder.current
+    if (!take) return
+    listener.current = recorder.current = null
+    setPhase('transcribing')
+    try {
+      const heard = await take.stop()
+      const next = join(before.current, heard)
+      setText(next)
+      setInterim('')
+      if (!heard) setNote('Didn’t catch anything. Check the microphone and try again.')
       setPhase('idle')
-      void extract(`${text} ${interim}`.trim())
-      return
-    }
-    if (recorder.current) {
-      setPhase('transcribing')
-      try {
-        const heard = await recorder.current.stop()
-        const next = [text, heard].filter(Boolean).join(' ')
-        setText(next)
-        setPhase('idle')
-        void extract(next)
-      } catch (e) {
-        setError((e as Error).message)
-        setPhase('idle')
-      } finally {
-        recorder.current = null
-        setStatus('')
-      }
+      void extract(next)
+    } catch (e) {
+      setError((e as Error).message)
+      setPhase('idle')
+    } finally {
+      setStatus('')
     }
   }
 
@@ -118,7 +145,13 @@ export function RambleDialog() {
     close()
   }
 
-  const listening = phase === 'listening'
+  const isListening = phase === 'listening'
+  const elapsed = clock(Math.max(0, now - startedAt))
+  const hint = isListening
+    ? listener.current
+      ? `Listening ${elapsed}`
+      : `Recording ${elapsed} · ${status || 'transcribed on this device when you stop'}`
+    : status || (phase === 'transcribing' ? 'Finishing…' : aiByline())
 
   return (
     <Modal onClose={close} label="Ramble" size="lg" align="top">
@@ -130,13 +163,13 @@ export function RambleDialog() {
           </div>
           <button
             className="mic"
-            data-live={listening || undefined}
-            aria-pressed={listening}
-            aria-label={listening ? 'Stop listening' : 'Start listening'}
-            onClick={listening ? stop : start}
+            data-live={isListening || undefined}
+            aria-pressed={isListening}
+            aria-label={isListening ? 'Stop listening' : 'Start listening'}
+            onClick={isListening ? stop : start}
             disabled={phase === 'transcribing' || phase === 'thinking'}
           >
-            {phase === 'transcribing' || phase === 'thinking' ? <Loader2 size={26} className="spin" /> : listening ? <Square size={22} /> : <Mic size={26} />}
+            {phase === 'transcribing' || phase === 'thinking' ? <Loader2 size={26} className="spin" /> : isListening ? <Square size={22} /> : <Mic size={26} />}
           </button>
         </header>
 
@@ -146,17 +179,18 @@ export function RambleDialog() {
           placeholder="Tap the mic and talk, or type: “Need to call the dentist tomorrow at 3, pick up dry cleaning, and send Sam the report by Friday — that one's urgent.”"
           value={interim ? `${text} ${interim}` : text}
           onChange={(e) => setText(e.target.value)}
-          readOnly={listening}
+          readOnly={phase !== 'idle'}
           aria-label="What you said"
         />
         <div className="ramble-bar">
-          <span className="micro">{status || (listening ? (speech === 'whisper' ? 'Recording · transcribed on this device when you stop' : 'Listening…') : aiByline())}</span>
+          <span className="micro" aria-live="polite">{hint}</span>
           {!local && (
             <button className="btn btn-secondary btn-sm" disabled={!text.trim() || phase !== 'idle'} onClick={() => extract()}>
               <Sparkles size={14} /> Find Tasks
             </button>
           )}
         </div>
+        {note && !error && <p className="form-hint">{note}</p>}
         {error && <p className="form-hint" data-error>{error} <button className="link" onClick={() => open({ type: 'settings' })}>AI settings</button></p>}
 
         {drafts.length > 0 && (
