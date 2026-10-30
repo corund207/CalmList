@@ -23,7 +23,7 @@ test('serves the landing page and the app with security headers', async () => {
   assert.equal(home.status, 200)
   assert.match(await home.text(), /landing/)
   assert.match(home.headers.get('content-security-policy') ?? '', /frame-ancestors 'none'/)
-  assert.equal(home.headers.get('cache-control'), 'no-cache')
+  assert.equal(home.headers.get('cache-control'), 'no-cache, no-transform')
 
   const redirect = await site.request('/app')
   assert.equal(redirect.status, 301)
@@ -47,7 +47,7 @@ test('endpoints run before the sync API asks for a sign-in', async () => {
 })
 
 test('cache rules', () => {
-  assert.equal(cacheControl('/app/sw.js'), 'no-cache')
-  assert.equal(cacheControl('/app/manifest.webmanifest'), 'no-cache')
+  assert.equal(cacheControl('/app/sw.js'), 'no-cache, no-transform')
+  assert.equal(cacheControl('/app/manifest.webmanifest'), 'no-cache, no-transform')
   assert.equal(cacheControl('/app/icons/icon-192.png'), 'public, max-age=3600')
 })

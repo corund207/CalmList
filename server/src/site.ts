@@ -37,10 +37,13 @@ export const SECURITY_HEADERS: Record<string, string> = {
   ].join('; '),
 }
 
-/** Built files carry content hashes, so they never change; pages, the service worker and the manifest always revalidate. */
+/**
+ * Built files carry content hashes, so they never change; pages, the service worker and the manifest always
+ * revalidate. no-transform keeps the CDN from rewriting pages, such as injecting an analytics beacon.
+ */
 export const cacheControl = (path: string) => {
   if (path.startsWith('/app/assets/')) return 'public, max-age=31536000, immutable'
-  if (path.endsWith('/') || /\.(html|webmanifest)$/.test(path) || path.endsWith('/sw.js')) return 'no-cache'
+  if (path.endsWith('/') || /\.(html|webmanifest)$/.test(path) || path.endsWith('/sw.js')) return 'no-cache, no-transform'
   return 'public, max-age=3600'
 }
 
