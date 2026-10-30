@@ -37,7 +37,9 @@ Google Calendar sync, and sync through Supabase or a server you host yourself.
 | **Install anywhere** | Add it to the home screen on iPhone, iPad and Android, or install it from Chrome, Edge or Safari on Mac and Windows. It opens in its own window and starts offline. |
 | **Mac, Windows, iOS** | Native apps built with Tauri from the same code, a few MB each, syncing with the same account. |
 | **Sync your way** | Works offline in the browser. Connect Supabase Cloud, a self-hosted Supabase, or the bundled CalmList server; offline edits queue and send on reconnect. |
-| **Integrations** | Live sync of dated tasks to a dedicated *CalmList* Google Calendar, .ics export for Apple and Outlook, and Todoist import (CSV). |
+| **Calendar** | Tasks and Google Calendar events together, by date and time: a month grid, a week of hours, or a list. Add events from any calendar as tasks. |
+| **Integrations** | Two-way sync with a *CalmList* Google Calendar that keeps running with the app closed, .ics export for Apple and Outlook, and Todoist import (CSV). |
+| **What's new** | Every release has a version number and notes, shown after each update and in Settings → General. |
 | **Yours** | Export, import or delete everything at any time. No telemetry. GDPR-ready. MIT licensed. |
 
 <table>
@@ -249,7 +251,7 @@ Passwords are hashed with scrypt; sessions are random 256-bit bearer tokens stor
 Under Settings → **Integrations**:
 
 - **AI assistants:** connect Claude, ChatGPT and other MCP clients ([details](#ai-assistants-mcp)).
-- **Google Calendar:** keeps a *CalmList* calendar in step with your dated tasks ([setup](#google-calendar)).
+- **Google Calendar:** syncs a *CalmList* calendar both ways and brings your other calendars into the Calendar view ([details](#google-calendar)).
 - **Apple, Outlook and other calendars:** download every open, dated task as an `.ics` file, with repeats written as `RRULE`s, and import it into your calendar.
 - **Todoist:** in Todoist, choose a project's *Export as a template → CSV*, then import one or many files. Sections, sub-tasks (from indentation), labels, priorities, dates and comments come across.
 - **JSON:** Settings → Data & Privacy exports and imports everything.
@@ -277,7 +279,8 @@ In Cloudflare Zero Trust → Networks → Tunnels → **macserver-apps** → Pub
 | `CALMLIST_SUPABASE_URL`, `CALMLIST_SUPABASE_ANON_KEY` | Sync, accounts, MCP | Supabase → Project Settings → API (the **anon public** key) |
 | `CALMLIST_SUPABASE_SERVICE_ROLE_KEY` | `/api/stats` and the status checks only | Same page. Stays on the server; never baked into the app |
 | `CALMLIST_CRON_SECRET` | Status checks every 30 minutes | Any long random string, e.g. `openssl rand -hex 32` |
-| `CALMLIST_GOOGLE_CLIENT_ID` | Google Calendar | See below |
+| `CALMLIST_GOOGLE_CLIENT_ID`, `CALMLIST_GOOGLE_CLIENT_SECRET` | Google Calendar | The OAuth web client ([below](#google-calendar)) |
+| `CALMLIST_GOOGLE_TOKEN_KEY` | Google Calendar | `openssl rand -hex 32`; encrypts the stored Google sign-ins |
 
 **Deploying:** push to `main` and cron picks it up within two minutes. To deploy at once, run `npm run deploy` from your computer (it runs `update.sh --force` over Tailscale SSH). Logs: `docker compose -f ~/apps/compose.yml logs -f calmlist`.
 
@@ -287,16 +290,26 @@ In Cloudflare Zero Trust → Networks → Tunnels → **macserver-apps** → Pub
 
 ### Google Calendar
 
-The connector creates a calendar called **CalmList** in the person's Google account and keeps it in step with every open task that has a date or time. Tasks with just a date become all-day events; tasks with a time become 30-minute events. Repeats become RRULEs, and completed, deleted or undated tasks are removed. It runs in the browser with the `calendar.app.created` scope, so it can only touch calendars it created, and stores no refresh token. Access lasts an hour, so sync pauses after that until a click resumes it.
+With an account on the CalmList server, Google Calendar sync runs on the server, so it keeps going with every app closed:
 
-To turn it on:
+- **The CalmList calendar syncs both ways.** Dated tasks become events (all-day for a date, 30 minutes for a time, repeats as RRULEs). Events you add or move there, on any device, become or update tasks in the Inbox. Deleting an event deletes a task that came from Google; for a task made in CalmList it only clears the date.
+- **Your other calendars feed the Calendar view.** Their events appear next to your tasks; **Add** makes one a task, **Skip** hides it. Picked events stay where they are and aren't copied into the CalmList calendar.
+- **Changes arrive within seconds.** Google calls `/api/google/push` when a watched calendar changes, the server syncs, and open apps hear about it over `/api/live`. A poll every 10 minutes covers any gap.
+
+Connecting asks for `calendar.app.created` (manage only calendars CalmList made) and `calendar.readonly` (read the others). The server keeps a refresh token encrypted with AES-256-GCM, and disconnecting revokes it and deletes the CalmList calendar. Accounts without a CalmList server (Supabase or local) get the older one-way, browser-only sync, which needs a click to resume each hour.
+
+To set it up:
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Google Calendar API**.
-2. Set up the OAuth consent screen (External). Add the scope `.../auth/calendar.app.created` and link the Privacy Policy (`https://<app>/legal.html#privacy`).
-3. Create an **OAuth client ID** of type *Web application*, with your site (and `http://localhost:5173` for development) as authorized JavaScript origins.
-4. Set `CALMLIST_GOOGLE_CLIENT_ID` in `~/apps/.env` on macserver, then run `npm run deploy`.
+2. Set up the Google Auth Platform: branding with the privacy policy (`https://<app>/legal.html#privacy`), an External audience, and the scopes `openid`, `userinfo.email`, `calendar.app.created` and `calendar.readonly`.
+3. Create an **OAuth client** of type *Web application* with your site (and `http://localhost:5173` for development) as JavaScript origins, and add a client secret.
+4. On macserver, set `CALMLIST_GOOGLE_CLIENT_ID`, `CALMLIST_GOOGLE_CLIENT_SECRET` and `CALMLIST_GOOGLE_TOKEN_KEY` in `~/apps/.env`, then run `npm run deploy`.
 
-While the app is in Google's *Testing* mode, only test users you add can connect. Publishing it for everyone requires Google's verification of the scope.
+While the app is in Google's *Testing* mode, only the test users you add can connect. Opening it to everyone needs Google's verification of `calendar.readonly`, a sensitive scope.
+
+## Releases
+
+Every release, major, minor or patch, has a version number and a *What's new* entry in [`web/src/releases.ts`](web/src/releases.ts). The newest entry is the running version, `package.json` carries the same number (a test checks), and the app shows the notes once after each update and any time under Settings → General.
 
 ## Service status
 
@@ -442,7 +455,7 @@ The UI follows the [Jonah Chang design system](https://claude.ai/artifact/FcShiF
 - **Service-role key on macserver:** set `CALMLIST_SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) in `~/apps/.env`, then `npm run deploy`. `CALMLIST_CRON_SECRET` is already set. Until then `/api/stats` answers 503 and the badges show nothing.
 - **Supabase redirect URLs:** in [Authentication → URL Configuration](https://supabase.com/dashboard/project/ddvtufcbrvzjislojlqp/auth/url-configuration), set the Site URL to `https://calmlist.jonahchang.com/app/` and add `https://calmlist.jonahchang.com/app/**`, so confirmation and reset emails open the app.
 - **AI assistants:** reconnect Claude, ChatGPT or other MCP clients with `https://calmlist.jonahchang.com/api/mcp`. The old Vercel address forwards, but not every client follows redirects.
-- **Google Calendar:** create the OAuth client with `https://calmlist.jonahchang.com` as an authorized origin and set `GOOGLE_CLIENT_ID` ([steps](#google-calendar)).
+- **Google Calendar:** open Settings → Integrations → Google Calendar on calmlist.jonahchang.com and press **Connect** (the Google Cloud project `calmlist` is set up).
 - **Privacy contact:** the GDPR needs a way to reach you privately. Add a contact email to `site/legal.html` (it currently points to GitHub issues). If you target Germany or Austria, also add an Impressum with a postal address.
 - **EU data residency (optional):** the Supabase project is in us-east-2. For EU users, a project in an EU region (e.g. Frankfurt) avoids the transfer to the US entirely.
 

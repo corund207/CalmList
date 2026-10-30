@@ -64,6 +64,10 @@ export interface Task extends Base {
   completedAt: number | null
   /** Set when an AI feature proposed the task (shown in the task view, per the EU AI Act's transparency duty). */
   ai?: boolean
+  /** The event in the CalmList Google calendar this task came from, when it was created there. */
+  calendarEventId?: string
+  /** The Google event (in another calendar) this task was picked from; it stays there, so it isn't copied back. */
+  imported?: { calendarId: string; eventId: string }
 }
 
 export interface Comment extends Base {

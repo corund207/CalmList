@@ -18,6 +18,9 @@ COPY package.json package-lock.json ./
 COPY server/package.json server/
 RUN npm ci --omit=dev --no-audit --no-fund --workspace server --include-workspace-root=false
 COPY server/src server/src
+# The server shares the task <-> calendar mapping with the app.
+COPY web/package.json web/
+COPY web/src/lib web/src/lib
 COPY --from=build /app/_site _site
 COPY --from=build /app/_functions _functions
 # The SQLite file lives on a volume; a new volume takes this directory's owner, so the app can write it as non-root.

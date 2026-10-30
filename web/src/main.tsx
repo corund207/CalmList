@@ -7,6 +7,8 @@ import './styles/base.css'
 import './styles/app.css'
 import './styles/tasks.css'
 import './styles/backdrops.css'
+import './styles/calendar.css'
+import './styles/motion.css'
 
 routeExternalLinks()
 

@@ -1,6 +1,7 @@
 import { Download, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { emptyData, type Data } from '../lib/types'
+import { VERSION } from '../releases'
 import { importData } from '../store/actions'
 import { usePrefs } from '../store/prefs'
 import { PRESETS, PROVIDER_NAMES } from '../store/providers'
@@ -16,6 +17,7 @@ type Tab = 'appearance' | 'general' | 'ai' | 'account' | 'integrations' | 'data'
 
 function General() {
   const { dailyGoal, set } = usePrefs()
+  const open = useUI((s) => s.open)
   return (
     <div className="settings-pane">
       <label className="form-field">
@@ -25,6 +27,12 @@ function General() {
           <span>tasks a day</span>
         </div>
       </label>
+      <div className="form-field">
+        <span className="micro">Version</span>
+        <p>
+          CalmList {VERSION} · <button className="link" onClick={() => open({ type: 'whatsNew' })}>What’s new</button>
+        </p>
+      </div>
     </div>
   )
 }
@@ -100,9 +108,9 @@ function DataPane() {
   )
 }
 
-export function SettingsDialog() {
+export function SettingsDialog({ tab: initial = 'appearance' }: { tab?: Tab }) {
   const close = useUI((s) => s.close)
-  const [tab, setTab] = useState<Tab>('appearance')
+  const [tab, setTab] = useState<Tab>(initial)
   const tabs: [Tab, string][] = [['appearance', 'Appearance'], ['general', 'General'], ['ai', 'AI'], ['account', 'Account & Sync'], ['integrations', 'Integrations'], ['data', 'Data & Privacy']]
   return (
     <Modal onClose={close} label="Settings" size="lg">

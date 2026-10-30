@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { eventId, fingerprint, planSync, toEvent } from './gcal'
+import { calendarTasks, eventDue, eventId, fingerprint, planSync, taskFromEvent, taskIdOf, taskPatchFromEvent, toEvent } from './gcal'
 import { emptyData, type Data, type Task } from './types'
 
 const task = (id: string, patch: Partial<Task> = {}): Task => ({
@@ -45,5 +45,42 @@ describe('Google Calendar mapping', () => {
     const plan = planSync(d, synced, 'UTC', APP)
     expect(plan.upsert.map((e) => e.extendedProperties.private.calmlist)).toEqual(['new'])
     expect(plan.remove.sort()).toEqual(['done', 'gone'])
+  })
+})
+
+describe('Google events to tasks', () => {
+  it('reads an event time in the person’s time zone', () => {
+    expect(eventDue({ id: 'e', start: { dateTime: '2026-11-03T07:30:00-05:00' } }, 'America/New_York')).toEqual({ date: '2026-11-03', time: '07:30' })
+    expect(eventDue({ id: 'e', start: { dateTime: '2026-11-03T07:30:00-05:00' } }, 'Europe/Paris')).toEqual({ date: '2026-11-03', time: '13:30' })
+    expect(eventDue({ id: 'e', start: { date: '2026-11-07' } }, 'UTC')).toEqual({ date: '2026-11-07' })
+    expect(eventDue({ id: 'e' }, 'UTC')).toBeNull()
+  })
+
+  it('finds the task behind an event, by CalmList’s stamp or the event it came from', () => {
+    const d = data(task('a'), task('b', { calendarEventId: 'gym1' }))
+    expect(taskIdOf({ id: 'x', extendedProperties: { private: { calmlist: 'a' } } }, d)).toBe('a')
+    expect(taskIdOf({ id: 'gym1' }, d)).toBe('b')
+    expect(taskIdOf({ id: 'other' }, d)).toBeUndefined()
+  })
+
+  it('patches only what changed in Google, keeping a repeat rule', () => {
+    const t = task('a', { content: 'Gym', due: { date: '2026-11-03', time: '07:30', recurrence: { every: 1, unit: 'week' } } })
+    const same = { id: 'e', summary: 'Gym', start: { dateTime: '2026-11-03T07:30:00-05:00' } }
+    expect(taskPatchFromEvent(same, t, 'America/New_York')).toEqual({})
+    expect(taskPatchFromEvent({ ...same, summary: 'Gym (legs)', start: { dateTime: '2026-11-04T08:00:00-05:00' } }, t, 'America/New_York')).toEqual({
+      content: 'Gym (legs)',
+      due: { date: '2026-11-04', time: '08:00', recurrence: { every: 1, unit: 'week' } },
+    })
+  })
+
+  it('makes tasks from events, and keeps picked ones out of the CalmList calendar', () => {
+    const e = { id: 'flight', summary: ' Flight ', description: 'Gate 4', start: { date: '2026-11-09' } }
+    const made = taskFromEvent(e, { id: 't1', projectId: 'p', timeZone: 'UTC', now: 5 })
+    expect(made).toMatchObject({ content: 'Flight', description: 'Gate 4', due: { date: '2026-11-09' }, calendarEventId: 'flight', projectId: 'p' })
+    const picked = taskFromEvent(e, { id: 't2', projectId: 'p', timeZone: 'UTC', now: 5, pickedFrom: 'primary' })
+    expect(picked.imported).toEqual({ calendarId: 'primary', eventId: 'flight' })
+    const d = data(made, picked)
+    expect(calendarTasks(d).map((t) => t.id)).toEqual(['t1'])
+    expect(toEvent(made, d, 'UTC', APP).id).toBe('flight')
   })
 })

@@ -54,13 +54,21 @@ interface Gis {
       initTokenClient(c: { client_id: string; scope: string; callback(r: TokenResponse): void; error_callback?(e: { type: string }): void }): {
         requestAccessToken(o?: { prompt?: string }): void
       }
+      initCodeClient(c: {
+        client_id: string
+        scope: string
+        ux_mode: 'popup'
+        select_account?: boolean
+        callback(r: { code?: string; error?: string; scope?: string }): void
+        error_callback?(e: { type: string }): void
+      }): { requestCode(): void }
       revoke(token: string, done?: () => void): void
     }
   }
 }
 
 let gis: Promise<Gis> | null = null
-const loadGis = () =>
+export const loadGis = () =>
   (gis ??= new Promise<Gis>((resolve, reject) => {
     const s = Object.assign(document.createElement('script'), { src: 'https://accounts.google.com/gsi/client', async: true })
     s.onload = () => resolve((window as unknown as { google: Gis }).google)

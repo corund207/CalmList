@@ -1,4 +1,4 @@
-import type { Data, Recurrence, Task } from './types'
+import type { Data, Recurrence, Task } from './types.ts'
 
 const DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
 

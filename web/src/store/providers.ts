@@ -36,7 +36,8 @@ const trimUrl = (url: string) => url.trim().replace(/\/+$/, '')
 
 /* ─── CalmList server ───────────────────────────────────────────────────── */
 
-async function call<T>(base: string, path: string, init: RequestInit & { token?: string } = {}): Promise<T> {
+/** A request to a CalmList server, signed in when a session token is given. */
+export async function call<T>(base: string, path: string, init: RequestInit & { token?: string } = {}): Promise<T> {
   let res: Response
   try {
     res = await fetch(`${trimUrl(base)}${path}`, {
@@ -52,9 +53,44 @@ async function call<T>(base: string, path: string, init: RequestInit & { token?:
   return json as T
 }
 
+/**
+ * The server's live stream: "sync" asks for a pull now, "google" means the person's Google calendars changed.
+ * Read with fetch, since EventSource can't send the session token. It reconnects after drops; servers
+ * without the stream fall back to polling.
+ */
+const liveUpdates = (url: string, token: string) => (poke: () => void) => {
+  const ctrl = new AbortController()
+  void (async () => {
+    while (!ctrl.signal.aborted) {
+      try {
+        const res = await fetch(`${trimUrl(url)}/api/live`, { headers: { authorization: `Bearer ${token}` }, signal: ctrl.signal })
+        if (!res.ok || !res.body) return
+        const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
+        let buffer = ''
+        for (;;) {
+          const { value, done } = await reader.read()
+          if (done) break
+          buffer += value
+          for (let end = buffer.indexOf('\n\n'); end >= 0; end = buffer.indexOf('\n\n')) {
+            const event = /^event: (.+)$/m.exec(buffer.slice(0, end))?.[1]
+            buffer = buffer.slice(end + 2)
+            if (event === 'sync') poke()
+            if (event === 'google') window.dispatchEvent(new Event('calmlist:google'))
+          }
+        }
+      } catch {
+        if (ctrl.signal.aborted) return
+      }
+      await new Promise((r) => setTimeout(r, 5000))
+    }
+  })()
+  return () => ctrl.abort()
+}
+
 const calmlistTransport = (url: string, token: string): Transport => ({
   pull: (since) => call(url, `/api/sync?since=${since}`, { token }),
   push: async (changes) => void (await call(url, '/api/sync', { method: 'POST', body: JSON.stringify({ changes }), token })),
+  subscribe: liveUpdates(url, token),
 })
 
 /* ─── Supabase (hosted or self-hosted) ──────────────────────────────────── */

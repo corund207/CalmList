@@ -135,6 +135,20 @@ code { font-family: var(--font-mono); font-size: 0.88em; color: var(--foreground
 }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) { .btn:hover { transform: translateY(-3px); } }
 
+/* The hero's one moment: each line rises from behind its mask, then a check draws itself, as finishing a task does in the app. */
+.hero-title .line { display: block; overflow: hidden; padding-bottom: 0.08em; margin-bottom: -0.08em; }
+.hero-check { width: 0.6em; height: 0.6em; margin-left: 0.1em; vertical-align: -0.02em; fill: none; stroke: var(--accent); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+@media (prefers-reduced-motion: no-preference) {
+  .hero .reveal.is-pending > .hero-title, .hero .reveal.is-in > .hero-title { opacity: 1; transform: none; transition: none; }
+  .hero-title .line > span { display: inline-block; animation: line-up 1.05s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .hero-title .line:nth-child(2) > span { animation-delay: 0.12s; }
+  .hero-check path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw-check 0.7s 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .btn { transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease; }
+  .btn:active { transform: scale(0.97); }
+}
+@keyframes line-up { from { transform: translateY(105%); } }
+@keyframes draw-check { to { stroke-dashoffset: 0; } }
+
 /* Theme gallery */
 .theme-shots { max-width: 1400px; margin: 65px auto 0; padding-bottom: clamp(60px, 7vw, 110px); display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
 .theme-shots .media { border-radius: 18px; }

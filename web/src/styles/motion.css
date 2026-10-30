@@ -1,0 +1,149 @@
+/*
+ * Motion. The one big moment is finishing a task: the ring fills with a little burst, the check draws itself, the
+ * title is struck through and the row folds away. Everything else is quick feedback and continuity: pages settle in,
+ * the calendar slides the way time moved, a new theme spreads from where you clicked.
+ * Movement sits behind prefers-reduced-motion: no-preference; the reduced path keeps fades and colour changes.
+ */
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Parts that keep their place while the page changes around them. */
+.sidebar { view-transition-name: sidebar; }
+.backdrop-layer { view-transition-name: backdrop; }
+.cal-body { view-transition-name: cal-body; }
+/* A new theme repaints everything at once, so nothing is held apart from the reveal. */
+:root[data-vt="theme"] .sidebar, :root[data-vt="theme"] .backdrop-layer, :root[data-vt="theme"] .cal-body { view-transition-name: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ─── Pages: the old view steps back, the new one settles in ─── */
+  ::view-transition-old(root) { animation: vt-leave 140ms ease-in both; }
+  ::view-transition-new(root) { animation: vt-enter 420ms var(--ease-out-expo) both; }
+
+  /* ─── Calendar: earlier and later slide; a new view or day settles with a little depth ─── */
+  :root[data-vt^="cal-"]::view-transition-old(root), :root[data-vt^="cal-"]::view-transition-new(root) { animation: none; }
+  :root[data-vt="cal-next"]::view-transition-old(cal-body) { animation: cal-out 200ms ease-in both; --cal-dx: -28px; }
+  :root[data-vt="cal-next"]::view-transition-new(cal-body) { animation: cal-in 460ms var(--ease-out-expo) both; --cal-dx: 36px; }
+  :root[data-vt="cal-prev"]::view-transition-old(cal-body) { animation: cal-out 200ms ease-in both; --cal-dx: 28px; }
+  :root[data-vt="cal-prev"]::view-transition-new(cal-body) { animation: cal-in 460ms var(--ease-out-expo) both; --cal-dx: -36px; }
+  :root[data-vt="cal-swap"]::view-transition-old(cal-body) { animation: cal-zoom-out 180ms ease-in both; }
+  :root[data-vt="cal-swap"]::view-transition-new(cal-body) { animation: cal-zoom-in 440ms var(--ease-out-expo) both; }
+  ::view-transition-group(cal-body) { animation-duration: 440ms; animation-timing-function: var(--ease-out-expo); }
+
+  /* ─── Themes: the new palette spreads from the click ─── */
+  :root[data-vt="theme"]::view-transition-old(root) { animation: none; }
+  :root[data-vt="theme"]::view-transition-new(root) { animation: theme-reveal 680ms var(--ease-out-expo) both; }
+
+  /* ─── Finishing a task ─── */
+  .check { position: relative; }
+  .task[data-checking] { opacity: 1; animation: row-leave 280ms 430ms ease-in forwards, row-fold 280ms 560ms var(--ease-out-expo) forwards; }
+  .task[data-checking] .check { animation: check-pop 460ms var(--ease-spring) both; }
+  .task[data-checking] .check svg { stroke-dasharray: 24; stroke-dashoffset: 24; animation: check-draw 320ms 90ms var(--ease-out-expo) forwards; }
+  .task[data-checking] .check::before {
+    content: ""; position: absolute; inset: -1px; border-radius: 50%; pointer-events: none;
+    animation: check-ring 560ms 40ms var(--ease-out-expo) both;
+  }
+  .task[data-checking] .check::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px; margin: -1.5px; border-radius: 50%;
+    color: var(--accent-bright); pointer-events: none; animation: check-burst 560ms 70ms var(--ease-out-expo) both;
+  }
+  .task[data-checking] .task-content {
+    display: inline; width: auto; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+    background: linear-gradient(currentColor, currentColor) 0 58% / 0 1.5px no-repeat;
+    animation: strike 340ms 170ms var(--ease-out-expo) forwards;
+  }
+
+  /* ─── Lists: rows arrive; a list that just appeared cascades (capped) ─── */
+  .task-list > [role="listitem"], .drafts > .draft { animation: row-in 380ms var(--ease-out-expo) both; }
+  .task-list[data-fresh] > :nth-child(2) { animation-delay: 28ms; }
+  .task-list[data-fresh] > :nth-child(3) { animation-delay: 56ms; }
+  .task-list[data-fresh] > :nth-child(4) { animation-delay: 84ms; }
+  .task-list[data-fresh] > :nth-child(5) { animation-delay: 112ms; }
+  .task-list[data-fresh] > :nth-child(6) { animation-delay: 140ms; }
+  .task-list[data-fresh] > :nth-child(7) { animation-delay: 168ms; }
+  .task-list[data-fresh] > :nth-child(n + 8) { animation-delay: 196ms; }
+
+  /* ─── Press feedback ─── */
+  .btn, .icon-btn, .chip, .segmented button, .cal-chip, .cal-date, .cal-block, .theme-card, .mic, .add-task-link {
+    transition: transform 160ms var(--ease-out-expo), background-color var(--duration-fast) ease, color var(--duration-fast) ease,
+      border-color var(--duration-fast) ease, opacity var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+  }
+  .btn:active, .icon-btn:active, .chip:active, .segmented button:active, .cal-chip:active, .cal-date:active, .mic:active { transform: scale(0.95); }
+  .cal-block:active, .theme-card:active, .add-task-link:active { transform: scale(0.98); }
+  .nav-item:active { transform: scale(0.985); }
+  .nav-item { transition: background var(--duration-fast) ease, color var(--duration-fast) ease, transform 160ms var(--ease-out-expo); }
+  .nav-item[aria-current="page"] > svg:first-child { animation: nav-pop 420ms var(--ease-spring); }
+  .add-task-link .plus, .inline-add-plus { transition: transform 320ms var(--ease-spring), background-color var(--duration-fast) ease, color var(--duration-fast) ease; }
+  .add-task-link:hover .plus, .inline-add:hover .inline-add-plus { transform: rotate(90deg); }
+  .fab { transition: transform 200ms var(--ease-out-expo); }
+  .fab svg { transition: transform 360ms var(--ease-spring); }
+  .fab:active { transform: scale(0.92); }
+  .fab:active svg { transform: rotate(90deg); }
+  .segmented button[aria-checked="true"] { animation: seg-on 300ms var(--ease-out-expo); }
+
+  /* ─── Overlays ─── */
+  .backdrop { animation: fade-in 200ms ease both; }
+  .modal { animation: modal-in 400ms var(--ease-out-expo) both; }
+  .toast { animation: toast-in 520ms var(--ease-spring) both; }
+  .cal-popover { animation: pop-up 300ms var(--ease-out-expo) both; transform-origin: 50% 0; }
+  .release[open] ul { animation: row-in 320ms var(--ease-out-expo) both; }
+
+  /* ─── Calendar details ─── */
+  .cal-block { animation: block-in 420ms var(--ease-out-expo) both; transform-origin: 50% 0; }
+  .cal-now::before { animation: now-pulse 2.4s ease-in-out infinite; }
+  .month-cell[data-today] .cal-date, .cal-col-head[data-today] .cal-col-date { animation: today-in 520ms 120ms var(--ease-spring) both; }
+
+  /* ─── Progress ─── */
+  .goal-ring .value { transition: stroke-dashoffset 700ms var(--ease-out-expo); }
+}
+
+/* Reduced motion: no movement, but changes still read through fades and colour. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 120ms; }
+  .task[data-checking] { opacity: 1; }
+  .task[data-checking] .task-content { color: var(--muted); text-decoration: line-through; transition: color 200ms ease; }
+  .modal, .toast, .cal-popover { animation: fade-in 160ms ease both; }
+}
+
+@keyframes vt-leave { to { opacity: 0; } }
+@keyframes vt-enter { from { opacity: 0; transform: translateY(10px); } }
+@keyframes cal-out { to { opacity: 0; transform: translateX(var(--cal-dx)); } }
+@keyframes cal-in { from { opacity: 0; transform: translateX(var(--cal-dx)); } }
+@keyframes cal-zoom-out { to { opacity: 0; transform: scale(0.985); } }
+@keyframes cal-zoom-in { from { opacity: 0; transform: scale(1.015); filter: blur(4px); } }
+@keyframes theme-reveal {
+  from { clip-path: circle(0 at var(--reveal-x, 50%) var(--reveal-y, 50%)); }
+  to { clip-path: circle(var(--reveal-r, 150vmax) at var(--reveal-x, 50%) var(--reveal-y, 50%)); }
+}
+
+@keyframes check-pop { 0% { transform: scale(0.82); } 55% { transform: scale(1.22); } 100% { transform: scale(1); } }
+@keyframes check-draw { to { stroke-dashoffset: 0; } }
+@keyframes check-ring {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  to { box-shadow: 0 0 0 11px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+@keyframes check-burst {
+  from { opacity: 1; box-shadow: 0 0 currentColor, 0 0 currentColor, 0 0 currentColor, 0 0 currentColor, 0 0 currentColor, 0 0 currentColor; }
+  70% { opacity: 1; }
+  to {
+    opacity: 0;
+    box-shadow: 0 -16px currentColor, 14px -8px currentColor, 14px 8px currentColor, 0 16px currentColor, -14px 8px currentColor, -14px -8px currentColor;
+  }
+}
+@keyframes strike { to { background-size: 100% 1.5px; color: var(--muted); } }
+@keyframes row-leave { to { opacity: 0; transform: translateX(18px); } }
+@keyframes row-fold {
+  from { max-height: var(--row-h, 80px); overflow: hidden; }
+  to { max-height: 0; padding-top: 0; padding-bottom: 0; border-bottom-width: 0; overflow: hidden; }
+}
+
+@keyframes row-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes nav-pop { 0% { transform: scale(1); } 40% { transform: scale(1.22) rotate(-6deg); } 100% { transform: scale(1); } }
+@keyframes seg-on { from { opacity: 0.4; transform: scale(0.94); } }
+@keyframes modal-in { from { opacity: 0; transform: translateY(16px) scale(0.97); filter: blur(6px); } }
+@keyframes toast-in { from { opacity: 0; transform: translateY(18px) scale(0.94); } }
+@keyframes pop-up { from { opacity: 0; transform: translateY(-6px) scale(0.96); } }
+@keyframes block-in { from { opacity: 0; transform: scaleY(0.85); } }
+@keyframes now-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 25%, transparent); } }
+@keyframes today-in { from { transform: scale(0.6); opacity: 0; } }

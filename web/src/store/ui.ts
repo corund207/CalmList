@@ -14,7 +14,8 @@ type Dialog =
   | { type: 'search' }
   | { type: 'ramble' }
   | { type: 'shortcuts' }
-  | { type: 'settings' }
+  | { type: 'settings'; tab?: 'appearance' | 'general' | 'ai' | 'account' | 'integrations' | 'data' }
+  | { type: 'whatsNew' }
   | { type: 'project'; id?: string }
   | { type: 'label'; id?: string }
   | { type: 'filter'; id?: string }

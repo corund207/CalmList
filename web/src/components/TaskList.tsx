@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useData } from '../hooks'
 import { children } from '../lib/select'
 import type { Task } from '../lib/types'
@@ -48,8 +48,14 @@ interface ListProps {
 }
 
 export function TaskList({ tasks, nested, showProject, hideDate }: ListProps) {
+  // Rows cascade in when the list first appears; afterwards a new row just arrives on its own.
+  const [fresh, setFresh] = useState(true)
+  useEffect(() => {
+    const t = setTimeout(() => setFresh(false), 700)
+    return () => clearTimeout(t)
+  }, [])
   return (
-    <div className="task-list" role="list">
+    <div className="task-list" role="list" data-fresh={fresh || undefined}>
       {tasks.map((t) =>
         nested ? <TaskTree key={t.id} task={t} showProject={showProject} hideDate={hideDate} /> : <TaskItem key={t.id} task={t} showProject={showProject} hideDate={hideDate} />,
       )}

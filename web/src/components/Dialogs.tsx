@@ -4,6 +4,7 @@ import { QuickAdd } from './QuickAdd'
 import { RambleDialog } from './Ramble'
 import { SearchDialog, ShortcutsDialog } from './Search'
 import { SettingsDialog } from './Settings'
+import { WhatsNewDialog } from './WhatsNew'
 
 /** Renders whichever global dialog is open. */
 export function Dialogs() {
@@ -25,7 +26,9 @@ export function Dialogs() {
     case 'shortcuts':
       return <ShortcutsDialog />
     case 'settings':
-      return <SettingsDialog />
+      return <SettingsDialog tab={dialog.tab} />
+    case 'whatsNew':
+      return <WhatsNewDialog />
     case 'newPassword':
       return <NewPasswordDialog />
     case 'confirm':

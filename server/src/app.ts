@@ -2,17 +2,13 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { HTTPException } from 'hono/http-exception'
 import { createSession, createUser, deleteSession, findUserByEmail, userForToken, verifyPassword, type User } from './auth.ts'
-import { tx, type DB } from './db.ts'
+import type { DB } from './db.ts'
+import { GoogleError, type Google } from './google.ts'
+import { KINDS, writeChanges, type Change } from './items.ts'
+import { liveStream } from './live.ts'
 
-const KINDS = new Set(['projects', 'sections', 'labels', 'filters', 'tasks', 'comments', 'events'])
 const MAX_BATCH = 2000
 const MAX_DOC = 64 * 1024
-
-interface Change {
-  kind: string
-  id: string
-  data: Record<string, unknown> | null
-}
 
 type Env = { Variables: { user: User; token: string } }
 
@@ -41,9 +37,11 @@ const validChange = (c: unknown): c is Change => {
 export interface Options {
   db: DB
   corsOrigin?: string
+  /** Server-side Google Calendar sync, when the server has a Google client configured. */
+  google?: Google
 }
 
-export const createApp = ({ db, corsOrigin = '*' }: Options) => {
+export const createApp = ({ db, corsOrigin = '*', google }: Options) => {
   const app = new Hono<Env>()
   const authLimit = limiter(20, 60_000)
 
@@ -56,6 +54,7 @@ export const createApp = ({ db, corsOrigin = '*' }: Options) => {
 
   app.onError((err, c) => {
     if (err instanceof HTTPException) return c.json({ error: err.message }, err.status)
+    if (err instanceof GoogleError) return c.json({ error: err.message }, err.status)
     console.error(err)
     return c.json({ error: 'Something went wrong' }, 500)
   })
@@ -85,6 +84,9 @@ export const createApp = ({ db, corsOrigin = '*' }: Options) => {
     const user = { id: row.id, email: row.email, name: row.name }
     return c.json({ token: createSession(db, user.id), user })
   })
+
+  // Google's push notifications carry a per-channel token instead of a session.
+  app.post('/api/google/push', (c) => (google?.onPush(c.req.raw.headers), c.body(null, 200)))
 
   app.use('/api/*', async (c, next) => {
     const token = c.req.header('authorization')?.replace(/^Bearer\s+/i, '')
@@ -123,16 +125,11 @@ export const createApp = ({ db, corsOrigin = '*' }: Options) => {
     const docs = changes.map((ch) => (ch.data ? JSON.stringify(ch.data) : null))
     if (docs.some((d) => d && d.length > MAX_DOC)) throw bad('A record is too large.')
 
-    const rev = tx(db, () => {
-      const upsert = db.prepare(`INSERT INTO items (user_id, kind, id, data, rev) VALUES (?, ?, ?, ?, ?)
-                                 ON CONFLICT (user_id, kind, id) DO UPDATE SET data = excluded.data, rev = excluded.rev`)
-      let { rev } = db.prepare('SELECT rev FROM users WHERE id = ?').get(user.id) as { rev: number }
-      changes.forEach((ch, i) => upsert.run(user.id, ch.kind, ch.id, docs[i], ++rev))
-      db.prepare('UPDATE users SET rev = ? WHERE id = ?').run(rev, user.id)
-      return rev
-    })
-    return c.json({ rev })
+    return c.json({ rev: writeChanges(db, user.id, changes) })
   })
+
+  // Tells open apps the moment something changes, so they pull right away instead of on the next poll.
+  app.get('/api/live', (c) => liveStream(c.get('user').id, c.req.raw.signal))
 
   // Everything the user owns, for backups.
   app.get('/api/export', (c) => {
@@ -143,6 +140,45 @@ export const createApp = ({ db, corsOrigin = '*' }: Options) => {
       out[r.kind][doc.id] = doc
     }
     return c.json(out)
+  })
+
+  /* ─── Google Calendar ─── */
+
+  const needGoogle = () => {
+    if (!google) throw bad('This server has no Google Calendar client configured.', 409)
+    return google
+  }
+  const body = <T,>(c: { req: { json<U>(): Promise<U> } }) => c.req.json<T>().catch(() => ({}) as T)
+
+  app.get('/api/google', (c) => c.json(google ? { available: true, ...google.status(c.get('user').id) } : { available: false, connected: false }))
+  app.post('/api/google/connect', async (c) => {
+    const { code, timeZone } = await body<{ code?: string; timeZone?: string }>(c)
+    if (!code) throw bad('Missing the Google sign-in code.')
+    return c.json(await needGoogle().connect(c.get('user').id, code, timeZone || 'UTC'))
+  })
+  app.post('/api/google/disconnect', async (c) => {
+    const { deleteCalendar } = await body<{ deleteCalendar?: boolean }>(c)
+    await needGoogle().disconnect(c.get('user').id, !!deleteCalendar)
+    return c.json({ connected: false })
+  })
+  app.post('/api/google/sync', async (c) => c.json(await needGoogle().sync(c.get('user').id)))
+  // A window of up to 100 days; the next 30 by default.
+  app.get('/api/google/events', async (c) => {
+    const from = new Date(c.req.query('from') ?? Date.now() - 12 * 3600_000)
+    const to = new Date(c.req.query('to') ?? from.getTime() + 30 * 86_400_000)
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to <= from || to.getTime() - from.getTime() > 100 * 86_400_000) throw bad('Ask for up to 100 days of events.')
+    return c.json(await needGoogle().upcoming(c.get('user').id, { from, to }))
+  })
+  app.post('/api/google/events/add', async (c) => {
+    const { key } = await body<{ key?: string }>(c)
+    if (!key?.includes('|')) throw bad('Which event?')
+    return c.json({ taskId: await needGoogle().pick(c.get('user').id, key) })
+  })
+  app.post('/api/google/events/dismiss', async (c) => {
+    const { key, undo } = await body<{ key?: string; undo?: boolean }>(c)
+    if (!key?.includes('|')) throw bad('Which event?')
+    needGoogle().dismiss(c.get('user').id, key, !!undo)
+    return c.json({ ok: true })
   })
 
   app.delete('/api/account', (c) => {

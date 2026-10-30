@@ -6,8 +6,10 @@ import { TaskDetailHost } from './components/TaskDetail'
 import { useShortcuts } from './components/Shortcuts'
 import { Sidebar } from './components/Sidebar'
 import { Toasts } from './components/Toasts'
+import { checkWhatsNew } from './components/WhatsNew'
 import { handleAuthRedirect } from './store/account'
 import { startCalendarAutoSync } from './store/gcal'
+import { startGoogleUpdates } from './store/google'
 import { useUI } from './store/ui'
 import { usePrefs } from './store/prefs'
 import { boot, useStore } from './store/store'
@@ -19,6 +21,7 @@ import { Completed } from './views/Completed'
 import { SearchView } from './views/SearchView'
 import { Today } from './views/Today'
 import { Upcoming } from './views/Upcoming'
+import { CalendarView } from './views/CalendarView'
 
 function Layout() {
   useShortcuts()
@@ -53,12 +56,14 @@ export function App() {
   const theme = useTheme()
   const motion = usePrefs((s) => s.motion)
   useEffect(() => startCalendarAutoSync(), [])
+  useEffect(() => startGoogleUpdates(), [])
   useEffect(() => {
     // An email link (confirmation or password reset) signs in before the first load.
     handleAuthRedirect()
       .catch(() => null)
       .then(async (link) => {
         await boot()
+        checkWhatsNew(() => useUI.getState().open({ type: 'whatsNew' }))
         if (link === 'recovery') useUI.getState().open({ type: 'newPassword' })
         if (link === 'confirm') useUI.getState().toast('Email confirmed. Syncing is on.')
         if (link === 'expired') useUI.getState().toast('That link has expired or was already used. Sign in, or ask for a new one.')
@@ -78,6 +83,7 @@ export function App() {
           <Route path="/label/:id" element={<LabelView />} />
           <Route path="/filter/:id" element={<FilterView />} />
           <Route path="/completed" element={<Completed />} />
+          <Route path="/calendar" element={<CalendarView />} />
           <Route path="/search" element={<SearchView />} />
           <Route path="/task/:id" element={<TaskLink />} />
           <Route path="*" element={<Navigate to="/today" replace />} />

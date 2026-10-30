@@ -1,5 +1,6 @@
 import { Check, Sparkles, Sun } from 'lucide-react'
 import { useState, type CSSProperties } from 'react'
+import { themeReveal } from '../lib/motion'
 import { usePrefs } from '../store/prefs'
 import { resolveThemeId } from './apply'
 import { GROUPS, paletteOf, THEMES, type Group, type Theme } from './themes'
@@ -29,13 +30,14 @@ export function ThemePicker() {
   const current = resolveThemeId(theme, themeLight, themeDark)
   const shown = THEMES.filter((t) => group === 'all' || t.group === group)
 
-  const pick = (t: Theme) => {
+  const choose = (t: Theme) => {
     if (!system) return set({ theme: t.id })
     // In system mode a theme fills the slot matching its own scheme; dynamic ones fill both.
     const scheme = paletteOf(t).scheme
     if (typeof t.palette === 'function') set({ themeLight: t.id, themeDark: t.id })
     else set(scheme === 'light' ? { themeLight: t.id } : { themeDark: t.id })
   }
+  const pick = (t: Theme, e: { clientX: number; clientY: number }) => themeReveal(e, () => choose(t))
   const selected = (t: Theme) => (system ? t.id === themeLight || t.id === themeDark : t.id === current)
 
   return (
@@ -62,7 +64,7 @@ export function ThemePicker() {
 
       <div className="theme-grid" role="radiogroup" aria-label="Themes">
         {shown.map((t) => (
-          <button key={t.id} type="button" role="radio" aria-checked={selected(t)} className="theme-card" onClick={() => pick(t)} title={t.blurb}>
+          <button key={t.id} type="button" role="radio" aria-checked={selected(t)} className="theme-card" onClick={(e) => pick(t, e)} title={t.blurb}>
             <Swatch theme={t} />
             <span className="theme-name">
               {t.name}

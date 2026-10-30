@@ -31,6 +31,38 @@ const SCHEMA = `
     PRIMARY KEY (user_id, kind, id)
   );
   CREATE INDEX IF NOT EXISTS items_by_rev ON items (user_id, rev);
+
+  -- A user's Google Calendar connection. The refresh token is encrypted (AES-256-GCM, key from GOOGLE_TOKEN_KEY).
+  CREATE TABLE IF NOT EXISTS google_links (
+    user_id       TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    email         TEXT NOT NULL DEFAULT '',
+    refresh_token TEXT NOT NULL,
+    time_zone     TEXT NOT NULL,
+    calendar_id   TEXT,                       -- the CalmList calendar, synced both ways
+    sync_token    TEXT,                       -- its incremental-sync position
+    synced        TEXT NOT NULL DEFAULT '{}', -- task id -> fingerprint of the event last written to Google
+    last_sync     INTEGER,
+    error         TEXT,
+    created_at    INTEGER NOT NULL
+  );
+
+  -- Push channels: Google calls /api/google/push when a watched calendar changes.
+  CREATE TABLE IF NOT EXISTS google_watches (
+    user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    calendar_id TEXT NOT NULL,
+    channel_id  TEXT NOT NULL UNIQUE,
+    resource_id TEXT NOT NULL,
+    token       TEXT NOT NULL,
+    expires_at  INTEGER NOT NULL,
+    PRIMARY KEY (user_id, calendar_id)
+  );
+
+  -- Events from other calendars the person chose not to add.
+  CREATE TABLE IF NOT EXISTS google_dismissed (
+    user_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event_key TEXT NOT NULL,
+    PRIMARY KEY (user_id, event_key)
+  );
 `
 
 export const openDb = (path: string): DB => {

@@ -1,4 +1,4 @@
-import type { Due } from './types'
+import type { Due } from './types.ts'
 
 export const DAY = 86_400_000
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']

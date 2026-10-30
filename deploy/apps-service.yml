@@ -18,6 +18,10 @@
       SUPABASE_ANON_KEY: ${CALMLIST_SUPABASE_ANON_KEY:-}
       SUPABASE_SERVICE_ROLE_KEY: ${CALMLIST_SUPABASE_SERVICE_ROLE_KEY:-}
       CRON_SECRET: ${CALMLIST_CRON_SECRET:-}
+      # Server-side Google Calendar sync; off unless all three are set.
+      GOOGLE_CLIENT_ID: ${CALMLIST_GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${CALMLIST_GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_TOKEN_KEY: ${CALMLIST_GOOGLE_TOKEN_KEY:-}
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]

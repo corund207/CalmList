@@ -3,6 +3,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import { toICS } from '../lib/ics'
 import { parseTodoistCSV } from '../lib/todoist'
 import { calendarLinked, connectCalendar, disconnectCalendar, syncCalendar, useGcal } from '../store/gcal'
+import { connectGoogle, disconnectGoogle, syncGoogle, useGoogle } from '../store/google'
 import { importTodoistProject } from '../store/importers'
 import { usePrefs } from '../store/prefs'
 import { isNative, openExternal, WEB_APP_URL } from '../lib/platform'
@@ -30,8 +31,73 @@ const download = (name: string, text: string, type: string) => {
   URL.revokeObjectURL(a.href)
 }
 
+/** Google Calendar run by the CalmList server: the CalmList calendar both ways, and picking from other calendars. */
+function ServerCalendar() {
+  const { connected, email, lastSync, error, busy } = useGoogle()
+  const { toast, open, close } = useUI()
+  const [problem, setProblem] = useState<string | null>(null)
+  const go = (fn: () => Promise<void>) => fn().then(() => setProblem(null), (e: Error) => setProblem(e.message))
+  const disconnect = (deleteCalendar: boolean) => () =>
+    void disconnectGoogle(deleteCalendar).then(() => toast('Google Calendar disconnected.'), (e: Error) => toast(e.message))
+
+  return (
+    <Card icon={<CalendarSync size={18} />} title="Google Calendar" status={connected ? 'Connected' : undefined}>
+      <p>
+        Keeps a calendar called <strong>CalmList</strong> in your Google account in sync both ways: dated tasks appear there, and events you add or move
+        there become tasks. Events from your other calendars show up under <strong>Calendar</strong> for you to add or skip. It runs on your server, so it
+        keeps going with the app closed.
+      </p>
+      {!connected ? (
+        isNative ? (
+          <>
+            <p className="form-hint">Google doesn't allow its sign-in inside apps like this one. Connect once from the web app; sync then runs for this app too.</p>
+            <div className="actions"><button className="btn btn-secondary btn-sm" onClick={() => void openExternal(`${WEB_APP_URL}#/today`)}>Open the Web App</button></div>
+          </>
+        ) : !PRESETS.googleClientId ? (
+          <p className="form-hint">This copy of CalmList has no Google client id. Set <code>VITE_GOOGLE_CLIENT_ID</code> (see the README) to turn it on.</p>
+        ) : (
+          <div className="actions"><button className="btn btn-secondary btn-sm" disabled={busy} onClick={() => go(connectGoogle)}>Connect Google Calendar</button></div>
+        )
+      ) : (
+        <div className="actions">
+          <button className="btn btn-secondary btn-sm" onClick={() => (close(), (location.hash = '#/calendar'))}><CalendarDays size={14} /> Open Calendar</button>
+          <button className="btn btn-secondary btn-sm" disabled={busy} onClick={() => go(syncGoogle)}><RefreshCw size={14} /> {busy ? 'Syncing…' : 'Sync Now'}</button>
+          <button
+            className="btn btn-secondary btn-sm"
+            disabled={busy}
+            onClick={() => open({
+              type: 'confirm',
+              title: 'Disconnect Google Calendar?',
+              body: 'CalmList stops syncing, removes its access to your Google account and deletes the CalmList calendar there. Your tasks stay here.',
+              action: 'Disconnect',
+              onConfirm: disconnect(true),
+            })}
+          >
+            Disconnect
+          </button>
+        </div>
+      )}
+      {(problem || error) && <p className="form-hint" data-error>{problem ?? error}</p>}
+      {connected && !error && (
+        <p className="form-hint">
+          {email && <>Connected as {email}. </>}
+          {lastSync ? `Last synced ${new Date(lastSync).toLocaleTimeString()}.` : 'Syncing…'}
+        </p>
+      )}
+    </Card>
+  )
+}
+
 /** Keeps a "CalmList" calendar in the person's Google account in step with their dated tasks. */
 function GoogleCalendar({ dated }: { dated: number }) {
+  const signedInToServer = usePrefs((s) => s.provider.kind === 'calmlist' && !!s.session)
+  const available = useGoogle((s) => s.available)
+  if (signedInToServer && available !== false) return <ServerCalendar />
+  return <BrowserCalendar dated={dated} />
+}
+
+/** The browser-only connector, for accounts without a CalmList server: one way, while the app is open. */
+function BrowserCalendar({ dated }: { dated: number }) {
   const { connected, expired, busy, lastSync, error } = useGcal()
   const { toast, open } = useUI()
   const [problem, setProblem] = useState<string | null>(null)

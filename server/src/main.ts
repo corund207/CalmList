@@ -4,6 +4,9 @@ import { join, relative, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { pruneSessions } from './auth.ts'
 import { openDb } from './db.ts'
+import { createGoogle } from './google.ts'
+import { onWrite } from './items.ts'
+import { notify } from './live.ts'
 import { createSite, run, type Endpoint, type SiteOptions } from './site.ts'
 
 const port = Number(process.env.PORT ?? 8787)
@@ -21,7 +24,19 @@ for (const name of ['mcp', 'stats', 'status-check'] as const) {
   if (existsSync(file)) endpoints[name] = (await import(pathToFileURL(file).href)) as Endpoint
 }
 
-const app = createSite({ db, corsOrigin: process.env.CORS_ORIGIN ?? '*', staticRoot, endpoints })
+// Open apps hear about every write at once.
+onWrite((userId) => notify(userId, 'sync'))
+
+// Google Calendar sync on the server, when a Google OAuth client is configured.
+const appUrl = process.env.APP_URL ?? `http://localhost:${port}/`
+const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_TOKEN_KEY } = process.env
+const google =
+  GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_TOKEN_KEY
+    ? createGoogle({ db, clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET, tokenKey: GOOGLE_TOKEN_KEY, publicUrl: new URL(appUrl).origin, appUrl })
+    : undefined
+google?.start()
+
+const app = createSite({ db, corsOrigin: process.env.CORS_ORIGIN ?? '*', staticRoot, endpoints, google })
 
 pruneSessions(db)
 setInterval(() => pruneSessions(db), 6 * 3_600_000).unref()
@@ -38,6 +53,10 @@ if (statusCheck && process.env.CRON_SECRET) {
 }
 
 serve({ fetch: app.fetch, port }, ({ port }) => {
-  const parts = [staticRoot && `serving ${staticRoot}`, Object.keys(endpoints).length && `endpoints: ${Object.keys(endpoints).join(', ')}`].filter(Boolean)
+  const parts = [
+    staticRoot && `serving ${staticRoot}`,
+    Object.keys(endpoints).length && `endpoints: ${Object.keys(endpoints).join(', ')}`,
+    google && 'Google Calendar sync on',
+  ].filter(Boolean)
   console.log(`CalmList server listening on http://localhost:${port}${parts.length ? ` (${parts.join('; ')})` : ''}`)
 })

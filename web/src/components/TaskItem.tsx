@@ -1,5 +1,5 @@
 import { CalendarDays, ChevronRight, Copy, Crosshair, Ellipsis, GitBranch, Link, MessageSquare, Pencil, Repeat, Trash2 } from 'lucide-react'
-import { memo, useState, type CSSProperties, type ReactNode } from 'react'
+import { memo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useData } from '../hooks'
 import { daysFromToday, formatDate, formatDue, isOverdue, today } from '../lib/dates'
@@ -40,14 +40,18 @@ export const TaskItem = memo(function TaskItem({ task, showProject, hideDate, de
   const section = task.sectionId ? data.sections[task.sectionId] : null
   const overdue = isOverdue(task.due)
 
+  const row = useRef<HTMLDivElement>(null)
   const open = () => setParams((p) => (p.set('task', task.id), p))
+  // Completing is the app's one big moment: the ring fills, the check draws, the title is struck through, then the row
+  // folds away (styles in motion.css). Its height is measured so the fold starts from the real size.
   const check = () => {
     if (task.completed) return complete(task)
+    row.current?.style.setProperty('--row-h', `${row.current.offsetHeight}px`)
     setChecking(true)
     setTimeout(() => {
       setChecking(false)
       complete(task)
-    }, 280)
+    }, matchMedia('(prefers-reduced-motion: reduce)').matches ? 300 : 760)
   }
 
   if (editing)
@@ -67,6 +71,7 @@ export const TaskItem = memo(function TaskItem({ task, showProject, hideDate, de
 
   return (
     <div
+      ref={row}
       role="listitem"
       className="task"
       data-checking={checking || undefined}

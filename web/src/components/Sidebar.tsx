@@ -1,9 +1,10 @@
-import { CalendarDays, CalendarRange, CircleCheck, Inbox, LayoutGrid, Mic, PanelLeftClose, Plus, Search, Settings } from 'lucide-react'
+import { CalendarDays, CalendarRange, CalendarSync, CircleCheck, Inbox, LayoutGrid, Mic, PanelLeftClose, Plus, Search, Settings } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useData } from '../hooks'
 import { today } from '../lib/dates'
 import { byOrder, completedToday, countOpen, openTasks, overdueTasks, projectsSorted } from '../lib/select'
+import { eventStart, useGoogle } from '../store/google'
 import { usePrefs } from '../store/prefs'
 import { useStore } from '../store/store'
 import { useUI } from '../store/ui'
@@ -28,6 +29,11 @@ export function Sidebar() {
   const status = useStore((s) => s.status)
   const { sidebar, dailyGoal, set } = usePrefs()
   const open = useUI((s) => s.open)
+  // Events in the coming week from Google that haven't been added or skipped yet.
+  const fresh = useGoogle((s) => {
+    const now = Date.now()
+    return Object.values(s.events).filter((e) => !e.taskId && !e.dismissed && +eventStart(e) >= now - 3600_000 && +eventStart(e) < now + 7 * 86_400_000).length
+  })
 
   const counts = useMemo(() => {
     const t = today()
@@ -74,17 +80,18 @@ export function Sidebar() {
             <button className="nav-item is-action" onClick={() => open({ type: 'ramble' })} title="Ramble  R">
               <Mic size={18} /><span className="name">Ramble</span>
             </button>
-            <NavLink className="nav-item" to="/inbox"><Inbox size={18} /><span className="name">Inbox</span><span className="count">{counts.inbox || ''}</span></NavLink>
-            <NavLink className="nav-item" to="/today"><CalendarDays size={18} /><span className="name">Today</span><span className="count">{counts.today || ''}</span></NavLink>
-            <NavLink className="nav-item" to="/upcoming"><CalendarRange size={18} /><span className="name">Upcoming</span></NavLink>
-            <NavLink className="nav-item" to="/filters-labels"><LayoutGrid size={18} /><span className="name">Filters &amp; Labels</span></NavLink>
-            <NavLink className="nav-item" to="/completed"><CircleCheck size={18} /><span className="name">Completed</span></NavLink>
+            <NavLink viewTransition className="nav-item" to="/inbox"><Inbox size={18} /><span className="name">Inbox</span><span className="count">{counts.inbox || ''}</span></NavLink>
+            <NavLink viewTransition className="nav-item" to="/today"><CalendarDays size={18} /><span className="name">Today</span><span className="count">{counts.today || ''}</span></NavLink>
+            <NavLink viewTransition className="nav-item" to="/upcoming"><CalendarRange size={18} /><span className="name">Upcoming</span></NavLink>
+            <NavLink viewTransition className="nav-item" to="/filters-labels"><LayoutGrid size={18} /><span className="name">Filters &amp; Labels</span></NavLink>
+            <NavLink viewTransition className="nav-item" to="/completed"><CircleCheck size={18} /><span className="name">Completed</span></NavLink>
+            <NavLink viewTransition className="nav-item" to="/calendar"><CalendarSync size={18} /><span className="name">Calendar</span><span className="count">{fresh || ''}</span></NavLink>
 
             {favorites.length > 0 && (
               <div className="nav-group">
                 <div className="nav-group-head"><span className="label">Favorites</span></div>
                 {favorites.map((f) => (
-                  <NavLink key={f.id} className="nav-item" to={f.to}><span className="nav-hash">{f.sigil}</span><span className="name">{f.name}</span></NavLink>
+                  <NavLink viewTransition key={f.id} className="nav-item" to={f.to}><span className="nav-hash">{f.sigil}</span><span className="name">{f.name}</span></NavLink>
                 ))}
               </div>
             )}
@@ -100,7 +107,7 @@ export function Sidebar() {
                 {(id) => {
                   const p = data.projects[id]
                   return (
-                    <NavLink className="nav-item" to={`/project/${p.id}`}>
+                    <NavLink viewTransition className="nav-item" to={`/project/${p.id}`}>
                       <span className="nav-hash">#</span>
                       <span className="name">{p.name}</span>
                       <span className="count">{countOpen(data, p.id) || ''}</span>
