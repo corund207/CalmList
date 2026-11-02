@@ -33,7 +33,7 @@ const download = (name: string, text: string, type: string) => {
 
 /** Google Calendar run by the CalmList server: the CalmList calendar both ways, and picking from other calendars. */
 function ServerCalendar() {
-  const { connected, email, lastSync, error, busy } = useGoogle()
+  const { connected, email, lastSync, error, busy, canRemoveEvents } = useGoogle()
   const { toast, open, close } = useUI()
   const [problem, setProblem] = useState<string | null>(null)
   const go = (fn: () => Promise<void>) => fn().then(() => setProblem(null), (e: Error) => setProblem(e.message))
@@ -44,9 +44,19 @@ function ServerCalendar() {
     <Card icon={<CalendarSync size={18} />} title="Google Calendar" status={connected ? 'Connected' : undefined}>
       <p>
         Keeps a calendar called <strong>CalmList</strong> in your Google account in sync both ways: dated tasks appear there, and events you add or move
-        there become tasks. Events from your other calendars show up under <strong>Calendar</strong> for you to add or skip. It runs on your server, so it
-        keeps going with the app closed.
+        there become tasks. Events from your other calendars show up under <strong>Calendar</strong> for you to add or skip. Check off a task and its event
+        leaves Google Calendar too, unless it's a meeting with other guests; reopen the task and the event comes back. It runs on your server, so it keeps
+        going with the app closed.
       </p>
+      {connected && !canRemoveEvents && (
+        <>
+          <p className="form-hint">
+            CalmList can't remove events from your other calendars yet, so ones you've added as tasks stay there when you check them off.
+            {isNative ? ' Reconnect from the web app to allow it.' : ' Reconnect to allow it.'}
+          </p>
+          {!isNative && <div className="actions"><button className="btn btn-primary btn-sm" disabled={busy} onClick={() => go(connectGoogle)}>Reconnect Google Calendar</button></div>}
+        </>
+      )}
       {!connected ? (
         isNative ? (
           <>

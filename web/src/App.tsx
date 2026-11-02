@@ -1,12 +1,14 @@
 import { Plus } from 'lucide-react'
 import { useEffect } from 'react'
-import { HashRouter, Navigate, Outlet, Route, Routes, useParams } from 'react-router-dom'
+import { HashRouter, Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { Dialogs } from './components/Dialogs'
 import { TaskDetailHost } from './components/TaskDetail'
 import { useShortcuts } from './components/Shortcuts'
 import { Sidebar } from './components/Sidebar'
+import { TabBar } from './components/TabBar'
 import { Toasts } from './components/Toasts'
 import { checkWhatsNew } from './components/WhatsNew'
+import { startViewport } from './lib/viewport'
 import { handleAuthRedirect } from './store/account'
 import { startCalendarAutoSync } from './store/gcal'
 import { startGoogleUpdates } from './store/google'
@@ -26,6 +28,11 @@ import { CalendarView } from './views/CalendarView'
 function Layout() {
   useShortcuts()
   const ready = useStore((s) => s.ready)
+  const { pathname } = useLocation()
+  // The column keeps scrolling across routes, so a new page has to start from its top.
+  useEffect(() => {
+    document.getElementById('main')?.scrollTo(0, 0)
+  }, [pathname])
   return (
     <>
       <a className="skip" href="#main" onClick={(e) => (e.preventDefault(), document.getElementById('main')?.focus())}>
@@ -38,6 +45,7 @@ function Layout() {
         </main>
       </div>
       <button className="fab" aria-label="Add task" onClick={() => useUI.getState().open({ type: 'quickAdd' })}><Plus size={26} /></button>
+      <TabBar />
       {ready && <TaskDetailHost />}
       <Dialogs />
       <Toasts />
@@ -57,6 +65,7 @@ export function App() {
   const motion = usePrefs((s) => s.motion)
   useEffect(() => startCalendarAutoSync(), [])
   useEffect(() => startGoogleUpdates(), [])
+  useEffect(() => startViewport(), [])
   useEffect(() => {
     // An email link (confirmation or password reset) signs in before the first load.
     handleAuthRedirect()

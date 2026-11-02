@@ -9,6 +9,7 @@ import './styles/tasks.css'
 import './styles/backdrops.css'
 import './styles/calendar.css'
 import './styles/motion.css'
+import './styles/phone.css'
 
 routeExternalLinks()
 

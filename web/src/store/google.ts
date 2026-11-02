@@ -6,7 +6,8 @@ import { loadGis } from './gcal'
 import { usePrefs } from './prefs'
 import { call, PRESETS } from './providers'
 
-const SCOPES = 'openid email https://www.googleapis.com/auth/calendar.app.created https://www.googleapis.com/auth/calendar.readonly'
+const SCOPES =
+  'openid email https://www.googleapis.com/auth/calendar.app.created https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events'
 
 export interface PickableEvent {
   key: string
@@ -28,6 +29,7 @@ interface Status {
   email?: string
   lastSync?: number | null
   error?: string | null
+  canRemoveEvents?: boolean
 }
 
 interface GoogleState {
@@ -37,6 +39,8 @@ interface GoogleState {
   email: string
   lastSync: number | null
   error: string | null
+  /** Whether finished events can leave the person's other calendars; connections from before 1.3 need a reconnect. */
+  canRemoveEvents: boolean
   busy: boolean
   /** Every event fetched so far, by key, from whichever ranges were shown. */
   events: Record<string, PickableEvent>
@@ -52,6 +56,7 @@ export const useGoogle = create<GoogleState>()(() => ({
   email: '',
   lastSync: null,
   error: null,
+  canRemoveEvents: false,
   busy: false,
   events: {},
   version: 0,
@@ -82,6 +87,7 @@ const apply = (s: Partial<Status>) =>
     email: s.email ?? '',
     lastSync: s.lastSync ?? null,
     error: s.error ?? null,
+    canRemoveEvents: !!s.canRemoveEvents,
   })
 
 export async function refreshGoogle() {

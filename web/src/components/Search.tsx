@@ -100,6 +100,7 @@ export function SearchDialog() {
             onChange={(e) => (setQ(e.target.value), setActive(0))}
           />
           <kbd>esc</kbd>
+          <button className="link palette-cancel phone-only" onClick={close}>Cancel</button>
         </div>
         <div className="palette-list" id="palette-list" role="listbox">
           {items.map((item, i) => {

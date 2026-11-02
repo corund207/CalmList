@@ -1,7 +1,7 @@
 import { CalendarDays, CalendarRange, CalendarSync, CircleCheck, Inbox, LayoutGrid, Mic, PanelLeftClose, Plus, Search, Settings } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { useData } from '../hooks'
+import { PHONE, useData } from '../hooks'
 import { today } from '../lib/dates'
 import { byOrder, completedToday, countOpen, openTasks, overdueTasks, projectsSorted } from '../lib/select'
 import { eventStart, useGoogle } from '../store/google'
@@ -53,12 +53,12 @@ export function Sidebar() {
   ]
   const archived = Object.values(data.projects).filter((p) => p.archived).sort(byOrder)
   const [showArchived, setShowArchived] = useState(false)
-  const closeOnMobile = () => window.innerWidth <= 760 && set({ sidebar: false })
+  const closeOnPhone = () => matchMedia(PHONE).matches && set({ sidebar: false })
 
   return (
     <>
       <aside className="sidebar" data-open={sidebar} aria-label="Sidebar" aria-hidden={!sidebar}>
-        <div className="sidebar-inner" onClick={(e) => (e.target as HTMLElement).closest('a') && closeOnMobile()}>
+        <div className="sidebar-inner" onClick={(e) => (e.target as HTMLElement).closest('a, .sidebar-top button, .add-task-link, .is-action, .nav-group-head button') && closeOnPhone()}>
           <div className="sidebar-top">
             <span className="brand">CalmList</span>
             <button className="icon-btn" onClick={() => open({ type: 'search' })} aria-label="Search" title="Search  /">

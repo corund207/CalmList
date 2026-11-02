@@ -153,14 +153,15 @@ export function syncCalendar(): Promise<void> {
     try {
       const calendarId = await ensureCalendar(saved)
       const plan = planSync(useStore.getState().data, saved.synced, timeZone(), publicAppUrl())
-      for (const event of plan.upsert) {
-        await upsert(calendarId, event)
-        saved.synced[event.extendedProperties.private.calmlist] = fingerprint(event)
-        save(saved)
-      }
+      // Removals first, so an event Google refuses can't hold up a finished task.
       for (const taskId of plan.remove) {
         await api(`/calendars/${encodeURIComponent(calendarId)}/events/${eventId(taskId)}`, { method: 'DELETE' })
         delete saved.synced[taskId]
+        save(saved)
+      }
+      for (const event of plan.upsert) {
+        await upsert(calendarId, event)
+        saved.synced[event.extendedProperties.private.calmlist] = fingerprint(event)
         save(saved)
       }
       useGcal.setState({ lastSync: Date.now(), error: null })

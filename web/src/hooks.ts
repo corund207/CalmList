@@ -3,6 +3,20 @@ import { useStore } from './store/store'
 
 export const useData = () => useStore((s) => s.data)
 
+/** The phone layout's breakpoint; the styles in phone.css switch at the same width. */
+export const PHONE = '(max-width: 760px)'
+
+export function useIsPhone() {
+  const [phone, setPhone] = useState(() => matchMedia(PHONE).matches)
+  useEffect(() => {
+    const mq = matchMedia(PHONE)
+    const on = () => setPhone(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return phone
+}
+
 export const useScrolled = (threshold = 24) => {
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {

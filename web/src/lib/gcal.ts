@@ -83,6 +83,7 @@ export interface GoogleEvent {
   end?: { date?: string; dateTime?: string; timeZone?: string }
   recurringEventId?: string
   htmlLink?: string
+  attendees?: { self?: boolean; resource?: boolean }[]
   extendedProperties?: { private?: Record<string, string> }
 }
 

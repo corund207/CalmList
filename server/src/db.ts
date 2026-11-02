@@ -43,7 +43,9 @@ const SCHEMA = `
     synced        TEXT NOT NULL DEFAULT '{}', -- task id -> fingerprint of the event last written to Google
     last_sync     INTEGER,
     error         TEXT,
-    created_at    INTEGER NOT NULL
+    created_at    INTEGER NOT NULL,
+    edit_since    INTEGER,                    -- when CalmList was allowed to change events in other calendars; NULL if it wasn't
+    removed       TEXT NOT NULL DEFAULT '{}'  -- task id -> what happened to its picked event when it was finished
   );
 
   -- Push channels: Google calls /api/google/push when a watched calendar changes.
@@ -65,9 +67,19 @@ const SCHEMA = `
   );
 `
 
+/** Columns added after a table first shipped, for databases that already have it. */
+const ADDED_COLUMNS = [
+  ['google_links', 'edit_since', 'INTEGER'],
+  ['google_links', 'removed', `TEXT NOT NULL DEFAULT '{}'`],
+]
+
 export const openDb = (path: string): DB => {
   const db = new DatabaseSync(path)
   db.exec(SCHEMA)
+  for (const [table, column, type] of ADDED_COLUMNS) {
+    const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]
+    if (!columns.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`)
+  }
   return db
 }
 

@@ -11,6 +11,19 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.3.0',
+    date: '2026-11-02',
+    title: 'Made for your phone',
+    notes: [
+      'On a phone, CalmList now works like an app: tabs under your thumb for Today, Inbox, Upcoming and Calendar, and More for everything else.',
+      'Menus and dialogs rise from the bottom and sit above the keyboard, buttons are big enough for a thumb, and everything fits around the notch and home bar. Add it to your home screen for the full effect.',
+      'Check off a task and its Google Calendar event is deleted too, from the CalmList calendar or from whichever calendar you added it from. Reopen the task and the event comes back.',
+      'Meetings with other guests stay in Google Calendar, so checking one off never cancels it for anyone else.',
+      'Connected Google Calendar before this version? Reconnect once in Settings → Integrations to let CalmList remove events from your other calendars.',
+      'On phones, Settings has a close button, section menus work without hovering, and tasks can be dragged by the grip at the end of the row.',
+    ],
+  },
+  {
     version: '1.2.0',
     date: '2026-10-29',
     title: 'Your calendar, both ways',

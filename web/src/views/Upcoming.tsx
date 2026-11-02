@@ -39,8 +39,14 @@ export function Upcoming() {
     requestAnimationFrame(() => document.getElementById(`day-${iso}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
+  const goToday = () => (setWeekStart(monday(startOfDay())), jump(t))
+
   return (
-    <Page title="Upcoming" eyebrow={weekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}>
+    <Page
+      title="Upcoming"
+      eyebrow={weekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+      actions={<button className="btn btn-secondary btn-sm phone-only" onClick={goToday}>Today</button>}
+    >
       <div className="week">
         <button className="icon-btn" aria-label="Previous week" onClick={() => setWeekStart((w) => addDays(w, -7))} disabled={weekStart <= monday(startOfDay())}>
           <ChevronLeft size={18} />
@@ -60,7 +66,7 @@ export function Upcoming() {
         <button className="icon-btn" aria-label="Next week" onClick={() => setWeekStart((w) => addDays(w, 7))}>
           <ChevronRight size={18} />
         </button>
-        <button className="btn btn-secondary btn-sm" onClick={() => (setWeekStart(monday(startOfDay())), jump(t))}>Today</button>
+        <button className="btn btn-secondary btn-sm" onClick={goToday}>Today</button>
       </div>
 
       {overdue.length > 0 && toISO(start) === t && (

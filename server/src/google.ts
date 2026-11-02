@@ -2,6 +2,7 @@
 // - The CalmList calendar syncs both ways: dated tasks become events, and events added or edited there
 //   (in Google Calendar, on any device) become or change tasks.
 // - The person's other calendars are listed for picking: an event they choose becomes a task.
+// - Finishing a task takes its event off the calendar, whichever one it is in; reopening the task puts it back.
 // Google calls /api/google/push when a watched calendar changes; a poll every 10 minutes covers any gap.
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID } from 'node:crypto'
 import { eventId, fingerprint, planSync, taskFromEvent, taskIdOf, taskPatchFromEvent, toEvent, type GoogleEvent } from '../../web/src/lib/gcal.ts'
@@ -14,7 +15,8 @@ const API = 'https://www.googleapis.com/calendar/v3'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const SCOPE_OWN = 'https://www.googleapis.com/auth/calendar.app.created'
 const SCOPE_READ = 'https://www.googleapis.com/auth/calendar.readonly'
-export const GOOGLE_SCOPES = ['openid', 'email', SCOPE_OWN, SCOPE_READ]
+const SCOPE_EVENTS = 'https://www.googleapis.com/auth/calendar.events'
+export const GOOGLE_SCOPES = ['openid', 'email', SCOPE_OWN, SCOPE_READ, SCOPE_EVENTS]
 const CALENDAR_NAME = 'CalmList'
 const CALENDAR_NOTE = 'Your dated CalmList tasks. Events you add here become tasks, and edits sync both ways.'
 const WATCH_TTL = 7 * 24 * 3600 // seconds; Google keeps a channel for about a week at most
@@ -45,6 +47,12 @@ export class GoogleError extends Error {
 /** Google answered 410: an incremental-sync position expired, or the thing was already deleted. */
 class Gone extends Error {}
 
+/** Google refused for good, such as a read-only calendar. Rate limits also answer 403, but those pass with time. */
+class Forbidden extends GoogleError {}
+
+/** What finishing a task did to its picked event: it left its calendar, or it had to stay there. */
+type Removal = 'deleted' | 'kept'
+
 interface Link {
   user_id: string
   email: string
@@ -55,6 +63,8 @@ interface Link {
   synced: string
   last_sync: number | null
   error: string | null
+  edit_since: number | null
+  removed: string
 }
 
 interface Watch {
@@ -193,8 +203,12 @@ export function createGoogle(o: GoogleOptions) {
     if (res.status === 404) return null
     if (res.status === 410) throw new Gone()
     if (res.status === 204) return {} as T
-    const body = (await res.json().catch(() => ({}))) as { error?: { message?: string } }
-    if (!res.ok) throw new GoogleError(body?.error?.message ?? `Google Calendar responded ${res.status}`, res.status === 409 ? 409 : 502)
+    const body = (await res.json().catch(() => ({}))) as { error?: { message?: string; errors?: { reason?: string }[] } }
+    if (!res.ok) {
+      const message = body?.error?.message ?? `Google Calendar responded ${res.status}`
+      if (res.status === 403 && !/limit/i.test(body?.error?.errors?.[0]?.reason ?? '')) throw new Forbidden(message, 502)
+      throw new GoogleError(message, res.status === 409 ? 409 : 502)
+    }
     return body as T
   }
 
@@ -220,20 +234,7 @@ export function createGoogle(o: GoogleOptions) {
     const synced = JSON.parse(l.synced) as Record<string, string>
     const base = `/calendars/${enc(l.calendar_id)}/events`
     const plan = planSync(data, synced, l.time_zone, o.appUrl)
-    for (const event of plan.upsert) {
-      const body = JSON.stringify({ ...event, status: 'confirmed' })
-      if (!(await api(userId, `${base}/${event.id}`, { method: 'PUT', body }))) {
-        try {
-          await api(userId, base, { method: 'POST', body })
-        } catch (e) {
-          // The id was used before and deleted; Google keeps it, so bring it back instead.
-          if ((e as GoogleError).status === 409) await api(userId, `${base}/${event.id}`, { method: 'PUT', body })
-          else throw e
-        }
-      }
-      synced[event.extendedProperties.private.calmlist] = fingerprint(event)
-      update(userId, { synced: JSON.stringify(synced) })
-    }
+    // Removals first, so an event Google refuses can't hold up a finished task.
     for (const taskId of plan.remove) {
       const task = data.tasks[taskId]
       // A deleted task is gone from the data, so find its event by the task id CalmList stamped on it.
@@ -249,6 +250,59 @@ export function createGoogle(o: GoogleOptions) {
       delete synced[taskId]
       update(userId, { synced: JSON.stringify(synced) })
     }
+    for (const event of plan.upsert) {
+      const body = JSON.stringify({ ...event, status: 'confirmed' })
+      if (!(await api(userId, `${base}/${event.id}`, { method: 'PUT', body }))) {
+        try {
+          await api(userId, base, { method: 'POST', body })
+        } catch (e) {
+          // The id was used before and deleted; Google keeps it, so bring it back instead.
+          if ((e as GoogleError).status === 409) await api(userId, `${base}/${event.id}`, { method: 'PUT', body })
+          else throw e
+        }
+      }
+      synced[event.extendedProperties.private.calmlist] = fingerprint(event)
+      update(userId, { synced: JSON.stringify(synced) })
+    }
+    await settlePicked(userId, data)
+  }
+
+  /**
+   * Events picked from other calendars stay in those calendars, so finishing the task has to remove them there.
+   * Only tasks finished since CalmList was allowed to do this count, so connecting never clears old events out of a
+   * calendar. Meetings with other guests stay: deleting one would cancel it for everyone. So do events in calendars
+   * the person can't change. Reopening a task restores its event.
+   */
+  async function settlePicked(userId: string, data: Data) {
+    const l = link(userId)!
+    if (!l.edit_since) return
+    const removed = JSON.parse(l.removed) as Record<string, Removal>
+    const record = () => update(userId, { removed: JSON.stringify(removed) })
+    for (const task of Object.values(data.tasks)) {
+      if (!task.imported) continue
+      const path = `/calendars/${enc(task.imported.calendarId)}/events/${enc(task.imported.eventId)}`
+      if (task.completed && !removed[task.id] && (task.completedAt ?? 0) >= l.edit_since) {
+        removed[task.id] = await removeEvent(userId, path)
+        record()
+      } else if (!task.completed && removed[task.id]) {
+        if (removed[task.id] === 'deleted') await api(userId, path, { method: 'PATCH', body: JSON.stringify({ status: 'confirmed' }) }).catch(keepGoing)
+        delete removed[task.id]
+        record()
+      }
+    }
+  }
+
+  /** The event can't be changed or is already gone: neither is worth failing a sync over. */
+  const keepGoing = (e: unknown) => {
+    if (!(e instanceof Forbidden || e instanceof Gone)) throw e
+    return null
+  }
+
+  async function removeEvent(userId: string, path: string): Promise<Removal> {
+    const event = await api<GoogleEvent>(userId, path).catch(keepGoing)
+    const shared = event?.attendees?.some((a) => !a.self && !a.resource)
+    if (!event || event.status === 'cancelled' || shared) return 'kept'
+    return (await api(userId, path, { method: 'DELETE' }).catch(keepGoing)) ? 'deleted' : 'kept'
   }
 
   /** Reads what changed in the CalmList calendar since last time and applies it to tasks. */
@@ -302,6 +356,8 @@ export function createGoogle(o: GoogleOptions) {
         continue
       }
       if (task) {
+        // Left behind by an earlier connection: marked as sent, so the next push takes it off the calendar.
+        if (task.completed && !task.imported) synced[tid!] ??= 'finished'
         // On the first read CalmList is the source of truth; after that, edits made in Google win.
         if (firstRead || task.completed) continue
         const patch = taskPatchFromEvent(e, task, l.time_zone)
@@ -408,7 +464,7 @@ export function createGoogle(o: GoogleOptions) {
 
   const status = (userId: string) => {
     const l = link(userId)
-    return l ? { connected: true, email: l.email, lastSync: l.last_sync, error: l.error } : { connected: false }
+    return l ? { connected: true, email: l.email, lastSync: l.last_sync, error: l.error, canRemoveEvents: !!l.edit_since } : { connected: false }
   }
 
   return {
@@ -423,10 +479,12 @@ export function createGoogle(o: GoogleOptions) {
         throw new GoogleError('CalmList needs both calendar permissions. Connect again and leave both boxes ticked.')
       if (!body.refresh_token)
         throw new GoogleError('Google didn’t send a lasting sign-in. Remove CalmList at myaccount.google.com/permissions, then connect again.')
-      db.prepare(`INSERT INTO google_links (user_id, email, refresh_token, time_zone, created_at) VALUES (?, ?, ?, ?, ?)
+      // Removing finished events is optional: Google lets people untick it, and the rest of the sync works without it.
+      const editSince = granted.includes(SCOPE_EVENTS) ? Date.now() : null
+      db.prepare(`INSERT INTO google_links (user_id, email, refresh_token, time_zone, created_at, edit_since) VALUES (?, ?, ?, ?, ?, ?)
                   ON CONFLICT (user_id) DO UPDATE SET email = excluded.email, refresh_token = excluded.refresh_token,
-                  time_zone = excluded.time_zone, error = NULL`)
-        .run(userId, emailOf(String(body.id_token ?? '')), seal(key, String(body.refresh_token)), validZone(timeZone), Date.now())
+                  time_zone = excluded.time_zone, error = NULL, edit_since = excluded.edit_since`)
+        .run(userId, emailOf(String(body.id_token ?? '')), seal(key, String(body.refresh_token)), validZone(timeZone), Date.now(), editSince)
       tokens.set(userId, { value: String(body.access_token), expires: Date.now() + (Number(body.expires_in ?? 3600) - 60) * 1000 })
       await reconcile(userId)
       return status(userId)

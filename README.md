@@ -294,18 +294,19 @@ With an account on the CalmList server, Google Calendar sync runs on the server,
 
 - **The CalmList calendar syncs both ways.** Dated tasks become events (all-day for a date, 30 minutes for a time, repeats as RRULEs). Events you add or move there, on any device, become or update tasks in the Inbox. Deleting an event deletes a task that came from Google; for a task made in CalmList it only clears the date.
 - **Your other calendars feed the Calendar view.** Their events appear next to your tasks; **Add** makes one a task, **Skip** hides it. Picked events stay where they are and aren't copied into the CalmList calendar.
+- **Finishing a task removes its event.** Checking off a task deletes its event from Google Calendar, whether that's the CalmList calendar or the calendar it was picked from; reopening the task restores it. Meetings with other guests are left alone, because deleting one would cancel it for everyone, and so are events in calendars you can't edit. Only tasks finished after connecting count, so connecting never clears out old events.
 - **Changes arrive within seconds.** Google calls `/api/google/push` when a watched calendar changes, the server syncs, and open apps hear about it over `/api/live`. A poll every 10 minutes covers any gap.
 
-Connecting asks for `calendar.app.created` (manage only calendars CalmList made) and `calendar.readonly` (read the others). The server keeps a refresh token encrypted with AES-256-GCM, and disconnecting revokes it and deletes the CalmList calendar. Accounts without a CalmList server (Supabase or local) get the older one-way, browser-only sync, which needs a click to resume each hour.
+Connecting asks for `calendar.app.created` (manage only calendars CalmList made), `calendar.readonly` (read the others) and `calendar.events` (delete a finished task's event from the calendar it was picked from; everything else works if this one is unticked). The server keeps a refresh token encrypted with AES-256-GCM, and disconnecting revokes it and deletes the CalmList calendar. Accounts without a CalmList server (Supabase or local) get the older one-way, browser-only sync, which needs a click to resume each hour.
 
 To set it up:
 
 1. In [Google Cloud Console](https://console.cloud.google.com/), create a project and enable the **Google Calendar API**.
-2. Set up the Google Auth Platform: branding with the privacy policy (`https://<app>/legal.html#privacy`), an External audience, and the scopes `openid`, `userinfo.email`, `calendar.app.created` and `calendar.readonly`.
+2. Set up the Google Auth Platform: branding with the privacy policy (`https://<app>/legal.html#privacy`), an External audience, and the scopes `openid`, `userinfo.email`, `calendar.app.created`, `calendar.readonly` and `calendar.events`.
 3. Create an **OAuth client** of type *Web application* with your site (and `http://localhost:5173` for development) as JavaScript origins, and add a client secret.
 4. On macserver, set `CALMLIST_GOOGLE_CLIENT_ID`, `CALMLIST_GOOGLE_CLIENT_SECRET` and `CALMLIST_GOOGLE_TOKEN_KEY` in `~/apps/.env`, then run `npm run deploy`.
 
-While the app is in Google's *Testing* mode, only the test users you add can connect. Opening it to everyone needs Google's verification of `calendar.readonly`, a sensitive scope.
+While the app is in Google's *Testing* mode, only the test users you add can connect. Opening it to everyone needs Google's verification of `calendar.readonly` and `calendar.events`, both sensitive scopes.
 
 ## Releases
 

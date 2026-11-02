@@ -1,4 +1,4 @@
-import { Download, Upload } from 'lucide-react'
+import { Download, Upload, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { emptyData, type Data } from '../lib/types'
 import { VERSION } from '../releases'
@@ -114,6 +114,7 @@ export function SettingsDialog({ tab: initial = 'appearance' }: { tab?: Tab }) {
   const tabs: [Tab, string][] = [['appearance', 'Appearance'], ['general', 'General'], ['ai', 'AI'], ['account', 'Account & Sync'], ['integrations', 'Integrations'], ['data', 'Data & Privacy']]
   return (
     <Modal onClose={close} label="Settings" size="lg">
+      <button className="icon-btn modal-close phone-only" onClick={close} aria-label="Close settings"><X size={20} /></button>
       <div className="form">
         <h2 className="form-title">Settings.</h2>
         <nav className="subnav" aria-label="Settings sections">

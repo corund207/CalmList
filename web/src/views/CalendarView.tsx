@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperti
 import { useSearchParams } from 'react-router-dom'
 import { Page } from '../components/Page'
 import { TaskItem } from '../components/TaskItem'
-import { useData } from '../hooks'
+import { useData, useIsPhone } from '../hooks'
 import { addDays, formatDayHeading, startOfDay, toISO } from '../lib/dates'
 import { viewTransition } from '../lib/motion'
 import { openTasks } from '../lib/select'
@@ -34,19 +34,7 @@ const readMode = (): Mode => {
   }
 }
 
-/** Three days on a phone, seven elsewhere. */
-function useNarrow() {
-  const [narrow, setNarrow] = useState(() => matchMedia('(max-width: 760px)').matches)
-  useEffect(() => {
-    const mq = matchMedia('(max-width: 760px)')
-    const on = () => setNarrow(mq.matches)
-    mq.addEventListener('change', on)
-    return () => mq.removeEventListener('change', on)
-  }, [])
-  return narrow
-}
-
-/** The days a mode shows around an anchor day. */
+/** The days a mode shows around an anchor day: a week is three days on a phone, seven elsewhere. */
 function windowFor(mode: Mode, anchor: Date, narrow: boolean) {
   if (mode === 'month') {
     const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1)
@@ -63,10 +51,10 @@ const transition = (direction: 'next' | 'prev' | 'swap', update: () => void) => 
 /** Tasks and Google events by date and time: a month, a week of hours, or a list. */
 export function CalendarView() {
   const data = useData()
-  const { connected, available, events, version, loadingEvents, eventsError } = useGoogle()
+  const { connected, available, canRemoveEvents, events, version, loadingEvents, eventsError } = useGoogle()
   const { open } = useUI()
   const [, setParams] = useSearchParams()
-  const narrow = useNarrow()
+  const narrow = useIsPhone()
   const [mode, setModeState] = useState<Mode>(readMode)
   const [anchor, setAnchor] = useState(() => startOfDay())
   const [showSkipped, setShowSkipped] = useState(false)
@@ -190,7 +178,14 @@ export function CalendarView() {
           <button className="btn btn-secondary btn-sm" onClick={() => open({ type: 'settings', tab: 'integrations' })}>Connect</button>
         </div>
       )}
-      {eventsError && <p className="form-hint" data-error>{eventsError}</p>}
+      {connected && !canRemoveEvents && (
+        <div className="cal-connect">
+          <CalendarSync size={16} />
+          <p>Reconnect Google Calendar so events you check off leave your calendars too.</p>
+          <button className="btn btn-secondary btn-sm" onClick={() => open({ type: 'settings', tab: 'integrations' })}>Reconnect</button>
+        </div>
+      )}
+      {eventsError &&<p className="form-hint" data-error>{eventsError}</p>}
 
       <div className="cal-body" data-mode={mode}>
         {mode === 'month' && <MonthGrid start={start} anchor={anchor} byDay={byDay} onItem={openItem} onDay={openDay} />}

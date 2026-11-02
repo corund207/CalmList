@@ -163,7 +163,7 @@
 
 /* ─── Upcoming week strip ────────────────────────────────────────────────── */
 .week {
-  position: sticky; top: 56px; z-index: 20; display: flex; align-items: center; gap: 6px;
+  position: sticky; top: var(--topbar-h); z-index: 20; display: flex; align-items: center; gap: 6px;
   margin: -8px 0 18px; padding: 8px 0; background: var(--background); border-bottom: 1px solid var(--line);
 }
 .week-days { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); }
@@ -199,7 +199,7 @@
 .quick-add .editor { border: 0; background: transparent; padding: 18px 18px 14px; }
 
 /* ─── Toasts ─────────────────────────────────────────────────────────────── */
-.toasts { position: fixed; left: 50%; bottom: 24px; z-index: 95; display: grid; gap: 8px; transform: translateX(-50%); width: min(440px, calc(100% - 32px)); }
+.toasts { position: fixed; left: 50%; bottom: 24px; z-index: 95; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; transform: translateX(-50%); width: min(440px, calc(100% - 32px)); }
 .toast {
   display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 6px 0 18px;
   border-radius: var(--radius-pill); background: var(--foreground-bright); color: var(--background); font-size: 13px;
@@ -243,15 +243,6 @@
 .comment p { margin-top: 4px; color: var(--foreground-soft); font-size: 14px; white-space: pre-wrap; }
 .comment-box { display: grid; justify-items: end; gap: 8px; margin-top: 14px; }
 .comment-input { min-height: 64px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
-
-@media (max-width: 760px) {
-  .detail-body { grid-template-columns: 1fr; overflow-y: auto; }
-  .detail-main { overflow: visible; padding: 20px; }
-  .detail-side { border-left: 0; border-top: 1px solid var(--line); }
-  .backdrop { padding: 0; }
-  .modal[data-size="lg"] { max-width: none; min-height: 100%; border-radius: 0; border: 0; }
-  .detail { max-height: none; }
-}
 
 /* ─── Sections ───────────────────────────────────────────────────────────── */
 .section-head { position: relative; align-items: center; padding-bottom: 4px; }
@@ -355,21 +346,11 @@ kbd {
 .keys-row dt { display: flex; align-items: center; gap: 4px; }
 .keys-row dd { margin: 0; color: var(--foreground-soft); font-size: 14px; text-align: right; }
 
-/* ─── Phones ─────────────────────────────────────────────────────────────── */
+/* ─── Add button (phones; see phone.css) ─────────────────────────────────── */
 .fab {
-  position: fixed; right: 20px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 40; width: 56px; height: 56px;
-  display: none; place-items: center; border-radius: 50%; background: var(--action); color: var(--on-action);
+  position: fixed; z-index: 40; display: none; place-items: center; border-radius: 50%; background: var(--action); color: var(--on-action);
 }
 .fab:active { transform: scale(0.97); }
-@media (max-width: 760px) {
-  .fab { display: grid; }
-  .task-actions { display: none; }
-  .meta.is-project { margin-left: 0; }
-  .page { padding-bottom: 120px; }
-  .week-day .micro { font-size: 9px; }
-  .toasts { bottom: 92px; }
-  .drag-handle { display: none; }
-}
 
 /* ─── Ramble ─────────────────────────────────────────────────────────────── */
 .ramble { display: grid; gap: 14px; padding: 24px 26px 22px; }
